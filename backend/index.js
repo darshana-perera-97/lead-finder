@@ -244,10 +244,28 @@ const readLeads = () => {
 // Helper function to write leads
 const writeLeads = (leads) => {
   try {
+    // Ensure data directory exists
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    
+    // Validate leads is an array
+    if (!Array.isArray(leads)) {
+      console.error('Error writing leads: leads must be an array');
+      return false;
+    }
+    
+    // Write to file
     fs.writeFileSync(LEADS_FILE, JSON.stringify(leads, null, 2), 'utf8');
     return true;
   } catch (error) {
     console.error('Error writing leads:', error);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      path: LEADS_FILE,
+      dataDirExists: fs.existsSync(DATA_DIR)
+    });
     return false;
   }
 };
@@ -268,10 +286,28 @@ const readAnalytics = () => {
 // Helper function to write analytics
 const writeAnalytics = (analytics) => {
   try {
+    // Ensure data directory exists
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    
+    // Validate analytics is an object
+    if (typeof analytics !== 'object' || analytics === null) {
+      console.error('Error writing analytics: analytics must be an object');
+      return false;
+    }
+    
+    // Write to file
     fs.writeFileSync(ANALYTICS_FILE, JSON.stringify(analytics, null, 2), 'utf8');
     return true;
   } catch (error) {
     console.error('Error writing analytics:', error);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      path: ANALYTICS_FILE,
+      dataDirExists: fs.existsSync(DATA_DIR)
+    });
     return false;
   }
 };
@@ -1448,7 +1484,16 @@ app.post('/api/leads', authenticateToken, (req, res) => {
     };
     
     leads.push(newLead);
-    writeLeads(leads);
+    
+    // Write leads to file - check if successful
+    const leadsWritten = writeLeads(leads);
+    if (!leadsWritten) {
+      console.error('Failed to write leads to file');
+      return res.status(500).json({
+        error: 'Failed to save lead',
+        message: 'Could not write to leads file. Please check file permissions.'
+      });
+    }
     
     // Update analytics
     const analytics = readAnalytics();
@@ -1460,7 +1505,13 @@ app.post('/api/leads', authenticateToken, (req, res) => {
       };
     }
     analytics[userId].savedLeads = (analytics[userId].savedLeads || 0) + 1;
-    writeAnalytics(analytics);
+    
+    // Write analytics - check if successful (but don't fail the request if this fails)
+    const analyticsWritten = writeAnalytics(analytics);
+    if (!analyticsWritten) {
+      console.error('Failed to write analytics, but lead was saved successfully');
+      // Continue anyway since the lead was saved
+    }
     
     res.status(201).json(newLead);
   } catch (error) {
