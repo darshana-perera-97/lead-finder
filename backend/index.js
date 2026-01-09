@@ -3010,7 +3010,7 @@ app.get('/api/analytics', authenticateToken, (req, res) => {
     const leads = readLeads();
     const campaigns = readCampaigns();
     
-    // Get user-specific analytics
+    // Get user-specific analytics (for searches counter and daily sends tracking)
     const userAnalytics = analytics[userId] || {
       searches: 0,
       savedLeads: 0,
@@ -3018,21 +3018,30 @@ app.get('/api/analytics', authenticateToken, (req, res) => {
       dailySends: {}
     };
     
-    // Count saved leads for this user
+    // Calculate all metrics from REAL DATA sources (not stored values)
+    
+    // 1. Total Searches - from tracked counter (incremented on each search)
+    const totalSearches = userAnalytics.searches || 0;
+    
+    // 2. Saved Leads - REAL COUNT from leads array
     const savedLeadsCount = leads.filter(lead => lead.userId === userId).length;
     
-    // Count followups (leads with followup status)
+    // 3. Followups - REAL COUNT from leads with followup status
     const followupsCount = leads.filter(
       lead => lead.userId === userId && lead.followupStatus && lead.followupStatus !== 'none'
     ).length;
     
-    // Get user campaigns for statistics
+    // 4. Total Campaigns - REAL COUNT from campaigns array
     const userCampaigns = campaigns.filter(c => c.userId === userId);
     const totalCampaigns = userCampaigns.length;
+    
+    // 5. Total Messages Sent - REAL SUM from campaign sentCount values
     const totalSent = userCampaigns.reduce((sum, c) => sum + (c.sentCount || 0), 0);
+    
+    // 6. Total Failed Messages - REAL SUM from campaign failedCount values
     const totalFailed = userCampaigns.reduce((sum, c) => sum + (c.failedCount || 0), 0);
     
-    // Get daily sends data (last 30 days)
+    // 7. Daily Sends Data - from tracked daily sends (last 30 days)
     const dailySends = userAnalytics.dailySends || {};
     const last30Days = [];
     for (let i = 29; i >= 0; i--) {
@@ -3046,8 +3055,9 @@ app.get('/api/analytics', authenticateToken, (req, res) => {
       });
     }
     
+    // Return all REAL DATA (calculated from actual sources)
     res.json({
-      searches: userAnalytics.searches || 0,
+      searches: totalSearches,
       savedLeads: savedLeadsCount,
       followups: followupsCount,
       totalCampaigns,
