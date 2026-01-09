@@ -646,6 +646,24 @@ const initializeWhatsApp = () => {
       })
       .catch(err => {
         console.error('❌ Error initializing WhatsApp client:', err.message);
+        
+        // Check for missing system dependencies (Linux)
+        if (err.message.includes('libatk') || err.message.includes('shared libraries') || err.message.includes('cannot open shared object file')) {
+          console.error('');
+          console.error('⚠️  MISSING SYSTEM DEPENDENCIES DETECTED');
+          console.error('📦 Puppeteer requires system libraries to run on Linux.');
+          console.error('');
+          console.error('🔧 To fix this, run the installation script:');
+          console.error('   bash INSTALL_PUPPETEER_DEPS.sh');
+          console.error('');
+          console.error('📖 Or manually install dependencies:');
+          console.error('   Ubuntu/Debian: sudo apt-get install -y libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libgtk-3-0 libgbm1 libasound2 libxcomposite1 libxdamage1 libxfixes3 libxkbcommon0 libxrandr2 libxss1 libgconf-2-4 libxshmfence1');
+          console.error('   CentOS/RHEL: sudo yum install -y alsa-lib atk cups-libs gtk3 libXcomposite libXcursor libXdamage libXext libXi libXrandr libXScrnSaver libXtst pango');
+          console.error('');
+          console.error('📚 More info: https://pptr.dev/troubleshooting');
+          console.error('');
+        }
+        
         if (retries > 0) {
           console.log(`🔄 Retrying initialization... (${retries} attempts left)`);
           setTimeout(() => {
@@ -654,11 +672,13 @@ const initializeWhatsApp = () => {
           }, 5000);
         } else {
           console.error('❌ Failed to initialize WhatsApp client after multiple attempts');
-          console.error('💡 Troubleshooting tips:');
-          console.error('   1. Make sure Chrome/Chromium is installed');
-          console.error('   2. Try running: npm install puppeteer');
-          console.error('   3. Check if antivirus is blocking browser launch');
-          console.error('   4. WhatsApp Web will work when QR code endpoint is called');
+          if (!err.message.includes('libatk') && !err.message.includes('shared libraries')) {
+            console.error('💡 Troubleshooting tips:');
+            console.error('   1. Make sure Chrome/Chromium is installed');
+            console.error('   2. Try running: npm install puppeteer');
+            console.error('   3. Check if antivirus is blocking browser launch');
+            console.error('   4. WhatsApp Web will work when QR code endpoint is called');
+          }
           whatsappClient = null;
         }
       });
