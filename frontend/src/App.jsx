@@ -18,6 +18,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [whatsappConnected, setWhatsappConnected] = useState(false);
   const [backendDown, setBackendDown] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Listen for navigation events
   useEffect(() => {
@@ -61,9 +62,9 @@ function App() {
           if (error.name === 'TypeError' || error.message.includes('Failed to fetch')) {
             setBackendDown(true);
           } else {
-            // Token is invalid, clear storage
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
+          // Token is invalid, clear storage
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
           }
         })
         .finally(() => {
@@ -235,15 +236,36 @@ function App() {
   return (
     <>
       <BackendErrorOverlay show={backendDown && isAuthenticated} onRetry={handleRetryConnection} />
-      <div className="flex h-screen bg-white overflow-hidden">
-        <Sidebar activeTab={activeTab} onTabChange={setActiveTab} user={user} />
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <TopBar user={user} onLogout={handleLogout} whatsappConnected={whatsappConnected} />
-          <div className="flex-1 overflow-y-auto bg-white">
-            {renderScreen()}
-          </div>
+    <div className="flex h-screen bg-white overflow-hidden">
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+      <Sidebar 
+        activeTab={activeTab} 
+        onTabChange={(tab) => {
+          setActiveTab(tab);
+          setSidebarOpen(false); // Close sidebar on mobile when tab changes
+        }} 
+        user={user}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
+      <div className="flex-1 flex flex-col overflow-hidden">
+          <TopBar 
+            user={user} 
+            onLogout={handleLogout} 
+            whatsappConnected={whatsappConnected}
+            onMenuClick={() => setSidebarOpen(!sidebarOpen)}
+          />
+        <div className="flex-1 overflow-y-auto bg-white">
+          {renderScreen()}
         </div>
       </div>
+    </div>
     </>
   );
 }

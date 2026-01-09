@@ -7,10 +7,20 @@ export function AnalyticsScreen() {
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
 
   useEffect(() => {
     loadAnalytics();
     loadCampaigns();
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const loadAnalytics = async () => {
@@ -119,14 +129,14 @@ export function AnalyticsScreen() {
   const chartData = analytics.dailySends || [];
 
   return (
-    <div className="flex-1 p-8">
+    <div className="flex-1 p-4 md:p-6 lg:p-8">
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-[#2D3748]">Analytics</h2>
         <p className="text-sm text-[#718096] mt-1">Track your lead generation and campaign performance</p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
         <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-blue-500">
           <div className="flex items-center justify-between">
             <div>
@@ -211,69 +221,92 @@ export function AnalyticsScreen() {
       </div>
 
       {/* Daily Message Sends Chart and Campaign History */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
         {/* Left Side - Line Graph */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold text-[#2D3748] mb-1">Daily Message Sends</h3>
-            <p className="text-sm text-[#718096]">Email and WhatsApp messages sent over the last 30 days</p>
+        <div className="bg-white rounded-lg shadow-sm p-3 sm:p-4 md:p-6">
+          <div className="mb-4 sm:mb-6">
+            <h3 className="text-base sm:text-lg font-semibold text-[#2D3748] mb-1">Daily Message Sends</h3>
+            <p className="text-xs sm:text-sm text-[#718096]">Email and WhatsApp messages sent over the last 30 days</p>
           </div>
-          <ResponsiveContainer width="100%" height={400}>
-            <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-              <XAxis 
-                dataKey="date" 
-                stroke="#718096"
-                tick={{ fontSize: 12 }}
-                tickFormatter={(value) => {
-                  try {
-                    const date = new Date(value + 'T00:00:00');
-                    return `${date.getMonth() + 1}/${date.getDate()}`;
-                  } catch {
-                    return value;
-                  }
+          <div className="w-full h-[250px] sm:h-[300px] md:h-[350px] lg:h-[400px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart 
+                data={chartData} 
+                margin={{ 
+                  top: 5, 
+                  right: windowWidth < 640 ? 5 : windowWidth < 1024 ? 15 : 30, 
+                  left: windowWidth < 640 ? 5 : windowWidth < 1024 ? 10 : 20, 
+                  bottom: windowWidth < 640 ? 40 : windowWidth < 1024 ? 30 : 5 
                 }}
-              />
-              <YAxis 
-                stroke="#718096"
-                tick={{ fontSize: 12 }}
-              />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#fff', 
-                  border: '1px solid #E2E8F0',
-                  borderRadius: '8px'
-                }}
-                labelFormatter={(value) => {
-                  try {
-                    const date = new Date(value + 'T00:00:00');
-                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                  } catch {
-                    return value;
-                  }
-                }}
-              />
-              <Legend />
-              <Line 
-                type="monotone" 
-                dataKey="email" 
-                stroke="#3B82F6" 
-                strokeWidth={2}
-                name="Email"
-                dot={{ r: 4 }}
-                activeDot={{ r: 6 }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="whatsapp" 
-                stroke="#10B981" 
-                strokeWidth={2}
-                name="WhatsApp"
-                dot={{ r: 4 }}
-                activeDot={{ r: 6 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                <XAxis 
+                  dataKey="date" 
+                  stroke="#718096"
+                  tick={{ fontSize: windowWidth < 640 ? 10 : windowWidth < 1024 ? 11 : 12 }}
+                  angle={windowWidth < 640 ? -45 : 0}
+                  textAnchor={windowWidth < 640 ? 'end' : 'middle'}
+                  height={windowWidth < 640 ? 60 : windowWidth < 1024 ? 40 : 30}
+                  interval={windowWidth < 640 ? 'preserveStartEnd' : 0}
+                  tickFormatter={(value) => {
+                    try {
+                      const date = new Date(value + 'T00:00:00');
+                      return `${date.getMonth() + 1}/${date.getDate()}`;
+                    } catch {
+                      return value;
+                    }
+                  }}
+                />
+                <YAxis 
+                  stroke="#718096"
+                  tick={{ fontSize: windowWidth < 640 ? 10 : windowWidth < 1024 ? 11 : 12 }}
+                  width={windowWidth < 640 ? 35 : windowWidth < 1024 ? 40 : 50}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: '#fff', 
+                    border: '1px solid #E2E8F0',
+                    borderRadius: '8px',
+                    fontSize: windowWidth < 640 ? '11px' : '12px',
+                    padding: windowWidth < 640 ? '6px' : '8px'
+                  }}
+                  labelFormatter={(value) => {
+                    try {
+                      const date = new Date(value + 'T00:00:00');
+                      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                    } catch {
+                      return value;
+                    }
+                  }}
+                />
+                <Legend 
+                  wrapperStyle={{ 
+                    fontSize: windowWidth < 640 ? '11px' : '12px',
+                    paddingTop: windowWidth < 640 ? '8px' : '10px'
+                  }}
+                  iconSize={windowWidth < 640 ? 12 : 14}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="email" 
+                  stroke="#3B82F6" 
+                  strokeWidth={windowWidth < 640 ? 1.5 : 2}
+                  name="Email"
+                  dot={{ r: windowWidth < 640 ? 2 : windowWidth < 1024 ? 3 : 4 }}
+                  activeDot={{ r: windowWidth < 640 ? 4 : windowWidth < 1024 ? 5 : 6 }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="whatsapp" 
+                  stroke="#10B981" 
+                  strokeWidth={windowWidth < 640 ? 1.5 : 2}
+                  name="WhatsApp"
+                  dot={{ r: windowWidth < 640 ? 2 : windowWidth < 1024 ? 3 : 4 }}
+                  activeDot={{ r: windowWidth < 640 ? 4 : windowWidth < 1024 ? 5 : 6 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
         {/* Right Side - Campaign History */}
@@ -287,24 +320,24 @@ export function AnalyticsScreen() {
               <p className="text-[#718096]">No campaigns yet</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            <div className="overflow-x-auto mx-2 sm:mx-4 md:mx-6 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+              <table className="w-full min-w-[400px] sm:min-w-[600px]">
                 <thead className="bg-[#F5F7F9] border-b border-[#718096]/20">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-[#2D3748]">Campaign</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-[#2D3748]">Type</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-[#2D3748]">Status</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-[#2D3748]">Date</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-[#2D3748]">Sent</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-[#2D3748]">Failed</th>
+                    <th className="px-2 sm:px-3 md:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-[#2D3748] whitespace-nowrap">Campaign</th>
+                    <th className="px-2 sm:px-3 md:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-[#2D3748] whitespace-nowrap">Type</th>
+                    <th className="px-2 sm:px-3 md:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-[#2D3748] whitespace-nowrap">Status</th>
+                    <th className="px-2 sm:px-3 md:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-[#2D3748] whitespace-nowrap hidden md:table-cell">Date</th>
+                    <th className="px-2 sm:px-3 md:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-[#2D3748] whitespace-nowrap">Sent</th>
+                    <th className="px-2 sm:px-3 md:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-[#2D3748] whitespace-nowrap">Failed</th>
                   </tr>
                 </thead>
                 <tbody>
                   {campaigns.map((campaign, index) => (
                     <tr key={campaign.id} className={index % 2 === 0 ? 'bg-white' : 'bg-[#F5F7F9]/50'}>
-                      <td className="px-4 py-3 text-sm text-[#2D3748] font-medium">{campaign.name}</td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-1 rounded text-xs ${
+                      <td className="px-2 sm:px-3 md:px-4 py-2 sm:py-3 text-xs sm:text-sm text-[#2D3748] font-medium max-w-[100px] sm:max-w-none truncate sm:truncate-none">{campaign.name}</td>
+                      <td className="px-2 sm:px-3 md:px-4 py-2 sm:py-3">
+                        <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-xs whitespace-nowrap ${
                           campaign.type === 'whatsapp' 
                             ? 'bg-green-100 text-green-700' 
                             : 'bg-blue-100 text-blue-700'
@@ -312,14 +345,14 @@ export function AnalyticsScreen() {
                           {campaign.type}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-1 rounded text-xs ${getStatusColor(campaign.status)}`}>
+                      <td className="px-2 sm:px-3 md:px-4 py-2 sm:py-3">
+                        <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-xs whitespace-nowrap ${getStatusColor(campaign.status)}`}>
                           {campaign.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-xs text-[#718096]">{formatDate(campaign.createdAt || campaign.sentAt)}</td>
-                      <td className="px-4 py-3 text-xs text-green-600 font-medium">{campaign.sentCount || 0}</td>
-                      <td className="px-4 py-3 text-xs text-red-600 font-medium">{campaign.failedCount || 0}</td>
+                      <td className="px-2 sm:px-3 md:px-4 py-2 sm:py-3 text-xs text-[#718096] hidden md:table-cell whitespace-nowrap">{formatDate(campaign.createdAt || campaign.sentAt)}</td>
+                      <td className="px-2 sm:px-3 md:px-4 py-2 sm:py-3 text-xs text-green-600 font-medium">{campaign.sentCount || 0}</td>
+                      <td className="px-2 sm:px-3 md:px-4 py-2 sm:py-3 text-xs text-red-600 font-medium">{campaign.failedCount || 0}</td>
                     </tr>
                   ))}
                 </tbody>

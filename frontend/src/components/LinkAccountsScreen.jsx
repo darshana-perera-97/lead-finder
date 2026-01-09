@@ -278,12 +278,12 @@ export function LinkAccountsScreen() {
   };
 
   return (
-    <div className="flex-1 p-8">
+    <div className="flex-1 p-4 md:p-6 lg:p-8">
       <h1 className="text-[#2D3748] mb-6">Link Accounts</h1>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         {/* Email Configuration Card */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="bg-white rounded-lg shadow-sm p-4 md:p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-12 h-12 bg-[#008080]/10 rounded-lg flex items-center justify-center">
               <Mail className="w-6 h-6 text-[#008080]" />
@@ -392,7 +392,7 @@ export function LinkAccountsScreen() {
         </div>
 
         {/* WhatsApp Configuration Card */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="bg-white rounded-lg shadow-sm p-4 md:p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-12 h-12 bg-green-500/10 rounded-lg flex items-center justify-center">
               <MessageCircle className="w-6 h-6 text-green-600" />

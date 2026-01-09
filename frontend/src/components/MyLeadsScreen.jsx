@@ -289,13 +289,13 @@ export function MyLeadsScreen() {
   };
 
   return (
-    <div className="flex-1 p-8">
-      <div className="flex items-center justify-between mb-6">
+    <div className="flex-1 p-4 md:p-6 lg:p-8">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <h2 className="text-xl font-semibold text-[#2D3748]">Saved Leads Database</h2>
         {selectedLeads.length > 0 && (
           <button
             onClick={handleCreateCampaign}
-            className="bg-[#008080] text-white px-6 py-2 rounded-lg hover:bg-[#006666] transition-colors"
+            className="w-full sm:w-auto bg-[#008080] text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-[#006666] transition-colors text-sm sm:text-base"
           >
             Create Campaign with Selected ({selectedLeads.length})
           </button>
@@ -303,9 +303,9 @@ export function MyLeadsScreen() {
       </div>
 
       {/* Search/Filter Section */}
-      <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+      <div className="bg-white rounded-lg shadow-sm p-4 md:p-6 mb-6">
         <h3 className="text-lg font-semibold text-[#2D3748] mb-4">Filter Leads</h3>
-        <div className="grid grid-cols-3 gap-4 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div>
             <label className="block text-sm text-[#718096] mb-2">Industry/Keyword</label>
             <input
@@ -351,17 +351,17 @@ export function MyLeadsScreen() {
             </select>
           </div>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <button
             onClick={handleFilter}
-            className="bg-[#008080] text-white px-6 py-2 rounded-lg hover:bg-[#006666] transition-colors flex items-center gap-2"
+            className="w-full sm:w-auto bg-[#008080] text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-[#006666] transition-colors flex items-center justify-center gap-2 text-sm sm:text-base"
           >
             <Search className="w-4 h-4" />
             Filter Leads
           </button>
           <button
             onClick={handleClearFilter}
-            className="bg-gray-200 text-[#2D3748] px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors"
+            className="w-full sm:w-auto bg-gray-200 text-[#2D3748] px-4 sm:px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors text-sm sm:text-base"
           >
             Clear Filters
           </button>
@@ -394,69 +394,72 @@ export function MyLeadsScreen() {
               Showing {savedLeads.length} of {allLeads.length} leads
             </div>
           )}
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-[#F5F7F9] border-b border-[#718096]/20">
-                <tr>
-                  <th className="px-6 py-4 text-left">
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div className="overflow-x-auto mx-2 sm:mx-4 md:mx-6 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+          <table className="w-full min-w-[600px] sm:min-w-[800px]">
+            <thead className="bg-[#F5F7F9] border-b border-[#718096]/20">
+              <tr>
+                <th className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-left">
+                  <input
+                    type="checkbox"
+                      checked={savedLeads.length > 0 && selectedLeads.length === savedLeads.length}
+                    onChange={toggleAll}
+                    className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#008080] border-[#718096] rounded focus:ring-[#008080] cursor-pointer"
+                  />
+                </th>
+                <th className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm text-[#2D3748] whitespace-nowrap">Business Name</th>
+                <th className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm text-[#2D3748] whitespace-nowrap hidden sm:table-cell">Phone</th>
+                <th className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm text-[#2D3748] whitespace-nowrap">Email</th>
+                <th className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm text-[#2D3748] whitespace-nowrap hidden lg:table-cell">Address</th>
+                <th className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm text-[#2D3748] whitespace-nowrap hidden md:table-cell">Website</th>
+                <th className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm text-[#2D3748] whitespace-nowrap">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+                {paginatedLeads.map((lead, index) => (
+                <tr key={lead.id} className={index % 2 === 0 ? 'bg-white' : 'bg-[#F5F7F9]/50'}>
+                  <td className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4">
                     <input
                       type="checkbox"
-                      checked={savedLeads.length > 0 && selectedLeads.length === savedLeads.length}
-                      onChange={toggleAll}
-                      className="w-4 h-4 text-[#008080] border-[#718096] rounded focus:ring-[#008080] cursor-pointer"
+                      checked={selectedLeads.includes(lead.id)}
+                      onChange={() => toggleLead(lead.id)}
+                      className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#008080] border-[#718096] rounded focus:ring-[#008080] cursor-pointer"
                     />
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm text-[#2D3748]">Business Name</th>
-                  <th className="px-6 py-4 text-left text-sm text-[#2D3748]">Phone</th>
-                  <th className="px-6 py-4 text-left text-sm text-[#2D3748]">Email</th>
-                  <th className="px-6 py-4 text-left text-sm text-[#2D3748]">Address</th>
-                  <th className="px-6 py-4 text-left text-sm text-[#2D3748]">Website</th>
-                  <th className="px-6 py-4 text-left text-sm text-[#2D3748]">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedLeads.map((lead, index) => (
-                  <tr key={lead.id} className={index % 2 === 0 ? 'bg-white' : 'bg-[#F5F7F9]/50'}>
-                    <td className="px-6 py-4">
-                      <input
-                        type="checkbox"
-                        checked={selectedLeads.includes(lead.id)}
-                        onChange={() => toggleLead(lead.id)}
-                        className="w-4 h-4 text-[#008080] border-[#718096] rounded focus:ring-[#008080] cursor-pointer"
-                      />
-                    </td>
-                    <td className="px-6 py-4 text-sm text-[#2D3748]">{lead.businessName}</td>
-                    <td className="px-6 py-4 text-sm text-[#718096]">{lead.phone}</td>
-                    <td className="px-6 py-4 text-sm text-[#718096]">{lead.email}</td>
-                    <td className="px-6 py-4 text-sm text-[#718096]">{lead.address}</td>
-                    <td className="px-6 py-4 text-sm text-[#008080] hover:underline">
+                  </td>
+                  <td className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-xs sm:text-sm text-[#2D3748] font-medium max-w-[120px] sm:max-w-none truncate sm:truncate-none">{lead.businessName}</td>
+                  <td className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-xs sm:text-sm text-[#718096] hidden sm:table-cell whitespace-nowrap">{lead.phone}</td>
+                  <td className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-xs sm:text-sm text-[#718096] break-all max-w-[150px] sm:max-w-none">{lead.email}</td>
+                  <td className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-xs sm:text-sm text-[#718096] hidden lg:table-cell max-w-[200px] truncate">{lead.address}</td>
+                  <td className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-xs sm:text-sm text-[#008080] hover:underline hidden md:table-cell">
                       {lead.website && lead.website !== 'N/A' ? (
                         <a 
                           href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`} 
                           target="_blank" 
                           rel="noopener noreferrer"
+                          className="break-all max-w-[150px] inline-block truncate"
+                          title={lead.website}
                         >
-                          {lead.website}
-                        </a>
+                      {lead.website}
+                    </a>
                       ) : (
                         <span className="text-[#718096]">N/A</span>
                       )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <button
-                        onClick={() => handleDeleteLead(lead.id)}
-                        className="text-red-500 hover:text-red-700 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                  </td>
+                  <td className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4">
+                    <button
+                      onClick={() => handleDeleteLead(lead.id)}
+                      className="text-red-500 hover:text-red-700 transition-colors p-1 sm:p-0"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
+      </div>
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}

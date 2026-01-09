@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Search, Database, Megaphone, Link, Settings, User, FileText, BarChart3 } from 'lucide-react';
+import { Search, Database, Megaphone, Link, Settings, User, FileText, BarChart3, X } from 'lucide-react';
 
-export function Sidebar({ activeTab, onTabChange, user }) {
+export function Sidebar({ activeTab, onTabChange, user, isOpen = false, onClose }) {
   const [profileSettings, setProfileSettings] = useState(null);
 
   useEffect(() => {
@@ -52,11 +52,20 @@ export function Sidebar({ activeTab, onTabChange, user }) {
   ];
 
   return (
-    <div className="w-64 h-screen bg-[#F5F7F9] flex flex-col border-r border-gray-200">
-      {/* Logo */}
-      <div className="p-6 border-b border-gray-200">
-        <h1 className="text-[#008080] text-2xl font-bold">LeadFlow</h1>
-      </div>
+    <>
+      <div className={`fixed lg:static inset-y-0 left-0 z-50 w-64 h-screen bg-[#F5F7F9] flex flex-col border-r border-gray-200 transform transition-transform duration-300 ease-in-out ${
+        isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      }`}>
+        {/* Logo */}
+        <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+          <h1 className="text-[#008080] text-2xl font-bold">LeadFlow</h1>
+          <button
+            onClick={onClose}
+            className="lg:hidden p-2 hover:bg-gray-200 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5 text-[#718096]" />
+          </button>
+        </div>
 
       {/* Navigation Links */}
       <nav className="flex-1 p-4">
@@ -93,7 +102,8 @@ export function Sidebar({ activeTab, onTabChange, user }) {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 

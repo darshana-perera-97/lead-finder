@@ -682,8 +682,8 @@ export function TemplatesScreen() {
   };
 
   return (
-    <div className="flex-1 p-8">
-      <div className="flex items-center justify-between mb-6">
+    <div className="flex-1 p-4 md:p-6 lg:p-8">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div>
           <h2 className="text-xl font-semibold text-[#2D3748]">Templates</h2>
           <p className="text-sm text-[#718096] mt-1">
@@ -693,7 +693,7 @@ export function TemplatesScreen() {
         <button
           onClick={handleNewTemplate}
           disabled={templates.length >= 15}
-          className="bg-[#008080] text-white px-6 py-2 rounded-lg hover:bg-[#006666] transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full sm:w-auto bg-[#008080] text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-[#006666] transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
           title={templates.length >= 15 ? 'Template limit reached. Delete a template to create a new one.' : ''}
         >
           <Plus className="w-4 h-4" />

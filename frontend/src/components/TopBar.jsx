@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Bell, Search, LogOut, CheckCircle2, XCircle, MessageCircle } from 'lucide-react';
+import { Bell, Search, LogOut, CheckCircle2, XCircle, MessageCircle, Menu } from 'lucide-react';
 import { NotificationsDropdown } from './NotificationsDropdown';
 
-export function TopBar({ user, onLogout, whatsappConnected }) {
+export function TopBar({ user, onLogout, whatsappConnected, onMenuClick }) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [profileSettings, setProfileSettings] = useState(null);
@@ -80,10 +80,16 @@ export function TopBar({ user, onLogout, whatsappConnected }) {
   }, []);
 
   return (
-    <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shadow-sm">
-      {/* Left Section - Search */}
-      <div className="flex items-center gap-4 flex-1 max-w-md">
-        <div className="relative flex-1">
+    <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-6 shadow-sm">
+      {/* Left Section - Menu Button & Search */}
+      <div className="flex items-center gap-2 md:gap-4 flex-1">
+        <button
+          onClick={onMenuClick}
+          className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          <Menu className="w-5 h-5 text-[#718096]" />
+        </button>
+        <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#718096]" />
           <input
             type="text"
@@ -94,9 +100,9 @@ export function TopBar({ user, onLogout, whatsappConnected }) {
       </div>
 
       {/* Right Section - Actions */}
-      <div className="flex items-center gap-4">
-        {/* WhatsApp Status */}
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200">
+      <div className="flex items-center gap-2 md:gap-4">
+        {/* WhatsApp Status - Hidden on small screens */}
+        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200">
           <MessageCircle className={`w-4 h-4 ${whatsappConnected ? 'text-green-600' : 'text-orange-500'}`} />
           {whatsappConnected ? (
             <>
@@ -130,8 +136,8 @@ export function TopBar({ user, onLogout, whatsappConnected }) {
           />
         </div>
 
-        {/* User Menu */}
-        <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
+        {/* User Menu - Hidden on small screens */}
+        <div className="hidden md:flex items-center gap-3 pl-4 border-l border-gray-200">
           <div className="text-right">
             <p className="text-sm font-medium text-[#2D3748]">{userName}</p>
             <p className="text-xs text-[#718096] capitalize">{userRole}</p>
@@ -144,11 +150,11 @@ export function TopBar({ user, onLogout, whatsappConnected }) {
         {/* Logout Button */}
         <button
           onClick={handleLogout}
-          className="flex items-center gap-2 px-4 py-2 text-[#718096] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-[#718096]/30 hover:border-red-200"
+          className="flex items-center gap-2 px-2 md:px-4 py-2 text-[#718096] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-[#718096]/30 hover:border-red-200"
           title="Logout"
         >
           <LogOut className="w-4 h-4" />
-          <span className="text-sm font-medium">Logout</span>
+          <span className="hidden sm:inline text-sm font-medium">Logout</span>
         </button>
       </div>
     </div>

@@ -264,7 +264,7 @@ export function CampaignsScreen() {
 
   if (selectedCampaign) {
     return (
-      <div className="flex-1 p-8">
+      <div className="flex-1 p-4 md:p-6 lg:p-8">
         <button
           onClick={() => setSelectedCampaign(null)}
           className="flex items-center gap-2 text-[#008080] hover:text-[#006666] mb-6"
@@ -276,28 +276,28 @@ export function CampaignsScreen() {
         <h1 className="text-[#2D3748] mb-6">{selectedCampaign.name}</h1>
 
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          <div className="overflow-x-auto mx-2 sm:mx-4 md:mx-6 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+            <table className="w-full min-w-[500px] sm:min-w-[640px]">
               <thead className="bg-[#F5F7F9] border-b border-[#718096]/20">
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm text-[#2D3748]">Business Name</th>
-                  <th className="px-6 py-4 text-left text-sm text-[#2D3748]">Email</th>
-                  <th className="px-6 py-4 text-left text-sm text-[#2D3748]">Email Status</th>
-                  <th className="px-6 py-4 text-left text-sm text-[#2D3748]">WhatsApp Status</th>
+                  <th className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm text-[#2D3748] whitespace-nowrap">Business Name</th>
+                  <th className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm text-[#2D3748] whitespace-nowrap">Email</th>
+                  <th className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm text-[#2D3748] whitespace-nowrap">Email Status</th>
+                  <th className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm text-[#2D3748] whitespace-nowrap">WhatsApp Status</th>
                 </tr>
               </thead>
               <tbody>
                 {campaignLeads.map((lead, index) => (
                   <tr key={lead.id} className={index % 2 === 0 ? 'bg-white' : 'bg-[#F5F7F9]/50'}>
-                    <td className="px-6 py-4 text-sm text-[#2D3748]">{lead.businessName}</td>
-                    <td className="px-6 py-4 text-sm text-[#718096]">{lead.email}</td>
-                    <td className="px-6 py-4 text-sm">
-                      <span className={getEmailStatusColor(lead.emailStatus)}>
+                    <td className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-xs sm:text-sm text-[#2D3748] font-medium max-w-[120px] sm:max-w-none truncate sm:truncate-none">{lead.businessName}</td>
+                    <td className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-xs sm:text-sm text-[#718096] break-all max-w-[150px] sm:max-w-none">{lead.email}</td>
+                    <td className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-xs sm:text-sm">
+                      <span className={`whitespace-nowrap ${getEmailStatusColor(lead.emailStatus)}`}>
                         {lead.emailStatus}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm">
-                      <span className={getWhatsAppStatusColor(lead.whatsappStatus)}>
+                    <td className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-xs sm:text-sm">
+                      <span className={`whitespace-nowrap ${getWhatsAppStatusColor(lead.whatsappStatus)}`}>
                         {lead.whatsappStatus}
                       </span>
                     </td>
@@ -328,7 +328,7 @@ export function CampaignsScreen() {
 
   if (loading) {
     return (
-      <div className="flex-1 p-8">
+      <div className="flex-1 p-4 md:p-6 lg:p-8">
         <div className="bg-white rounded-lg shadow-sm p-12 text-center">
           <Loader2 className="w-8 h-8 text-[#008080] animate-spin mx-auto mb-4" />
           <p className="text-[#718096]">Loading campaigns...</p>
@@ -339,7 +339,7 @@ export function CampaignsScreen() {
 
   if (error) {
     return (
-      <div className="flex-1 p-8">
+      <div className="flex-1 p-4 md:p-6 lg:p-8">
         <div className="bg-white rounded-lg shadow-sm p-12 text-center">
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
             <p className="text-red-600">{error}</p>
@@ -350,8 +350,8 @@ export function CampaignsScreen() {
   }
 
   return (
-    <div className="flex-1 p-8">
-      <div className="flex items-center justify-between mb-6">
+    <div className="flex-1 p-4 md:p-6 lg:p-8">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <h2 className="text-xl font-semibold text-[#2D3748]">Campaigns</h2>
         <p className="text-sm text-[#718096]">
           Go to "My Leads" to create a new campaign
@@ -365,26 +365,26 @@ export function CampaignsScreen() {
       ) : (
         <>
           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            <div className="overflow-x-auto mx-2 sm:mx-4 md:mx-6 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+              <table className="w-full min-w-[600px] sm:min-w-[800px]">
                 <thead className="bg-[#F5F7F9] border-b border-[#718096]/20">
                   <tr>
-                    <th className="px-6 py-4 text-left text-sm text-[#2D3748]">Campaign Name</th>
-                    <th className="px-6 py-4 text-left text-sm text-[#2D3748]">Type</th>
-                    <th className="px-6 py-4 text-left text-sm text-[#2D3748]">Status</th>
-                    <th className="px-6 py-4 text-left text-sm text-[#2D3748]">Leads</th>
-                    <th className="px-6 py-4 text-left text-sm text-[#2D3748]">Sent</th>
-                    <th className="px-6 py-4 text-left text-sm text-[#2D3748]">Failed</th>
-                    <th className="px-6 py-4 text-left text-sm text-[#2D3748]">Date Created</th>
-                    <th className="px-6 py-4 text-left text-sm text-[#2D3748]">Actions</th>
+                    <th className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm text-[#2D3748] whitespace-nowrap">Campaign Name</th>
+                    <th className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm text-[#2D3748] whitespace-nowrap">Type</th>
+                    <th className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm text-[#2D3748] whitespace-nowrap">Status</th>
+                    <th className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm text-[#2D3748] whitespace-nowrap hidden sm:table-cell">Leads</th>
+                    <th className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm text-[#2D3748] whitespace-nowrap">Sent</th>
+                    <th className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm text-[#2D3748] whitespace-nowrap hidden sm:table-cell">Failed</th>
+                    <th className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm text-[#2D3748] whitespace-nowrap hidden lg:table-cell">Date Created</th>
+                    <th className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm text-[#2D3748] whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginatedCampaigns.map((campaign, index) => (
                     <tr key={campaign.id} className={index % 2 === 0 ? 'bg-white' : 'bg-[#F5F7F9]/50'}>
-                      <td className="px-6 py-4 text-sm text-[#2D3748]">{campaign.name}</td>
-                      <td className="px-6 py-4">
-                        <span className={`px-2 py-1 rounded text-xs ${
+                      <td className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-xs sm:text-sm text-[#2D3748] font-medium max-w-[120px] sm:max-w-none truncate sm:truncate-none">{campaign.name}</td>
+                      <td className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4">
+                        <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-xs whitespace-nowrap ${
                           campaign.type === 'whatsapp' 
                             ? 'bg-green-100 text-green-700' 
                             : 'bg-blue-100 text-blue-700'
@@ -392,56 +392,59 @@ export function CampaignsScreen() {
                           {campaign.type}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
-                        <span className={`px-3 py-1 rounded-full text-xs ${getStatusColor(campaign.status)}`}>
+                      <td className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4">
+                        <span className={`px-1.5 sm:px-2 md:px-3 py-0.5 sm:py-1 rounded-full text-xs whitespace-nowrap ${getStatusColor(campaign.status)}`}>
                           {campaign.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-[#718096]">{campaign.leadIds?.length || 0}</td>
-                      <td className="px-6 py-4 text-sm text-green-600">{campaign.sentCount || 0}</td>
-                      <td className="px-6 py-4 text-sm text-red-600">{campaign.failedCount || 0}</td>
-                      <td className="px-6 py-4 text-sm text-[#718096]">{formatDate(campaign.createdAt)}</td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
+                      <td className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-xs sm:text-sm text-[#718096] hidden sm:table-cell">{campaign.leadIds?.length || 0}</td>
+                      <td className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-xs sm:text-sm text-green-600 font-medium">{campaign.sentCount || 0}</td>
+                      <td className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-xs sm:text-sm text-red-600 font-medium hidden sm:table-cell">{campaign.failedCount || 0}</td>
+                      <td className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-xs sm:text-sm text-[#718096] hidden lg:table-cell whitespace-nowrap">{formatDate(campaign.createdAt)}</td>
+                      <td className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4">
+                        <div className="flex flex-wrap items-center gap-1 sm:gap-2 md:gap-3">
                           {campaign.status === 'Draft' && (
                             <>
                               <button
                                 onClick={() => handleSendCampaign(campaign.id)}
                                 disabled={sendingCampaignId === campaign.id}
-                                className="flex items-center gap-1 text-[#008080] hover:text-[#006666] text-sm transition-colors disabled:opacity-50"
+                                className="flex items-center gap-0.5 sm:gap-1 text-[#008080] hover:text-[#006666] text-xs sm:text-sm transition-colors disabled:opacity-50 p-1 sm:p-0"
+                                title="Send Campaign"
                               >
                                 {sendingCampaignId === campaign.id ? (
                                   <>
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                    <span>Sending...</span>
+                                    <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
+                                    <span className="hidden md:inline">Sending...</span>
                                   </>
                                 ) : (
                                   <>
-                                    <Send className="w-4 h-4" />
-                                    <span>Send</span>
+                                    <Send className="w-3 h-3 sm:w-4 sm:h-4" />
+                                    <span className="hidden md:inline">Send</span>
                                   </>
                                 )}
                               </button>
                               <button
                                 onClick={() => handleScheduleCampaign(campaign)}
                                 disabled={schedulingCampaignId === campaign.id}
-                                className="flex items-center gap-1 text-orange-600 hover:text-orange-700 text-sm transition-colors disabled:opacity-50"
+                                className="flex items-center gap-0.5 sm:gap-1 text-orange-600 hover:text-orange-700 text-xs sm:text-sm transition-colors disabled:opacity-50 p-1 sm:p-0"
+                                title="Schedule Campaign"
                               >
-                                <Clock className="w-4 h-4" />
-                                <span>Send Later</span>
+                                <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+                                <span className="hidden md:inline">Send Later</span>
                               </button>
                             </>
                           )}
                           {campaign.status === 'Scheduled' && campaign.scheduledAt && (
-                            <span className="text-xs text-orange-600">
+                            <span className="text-xs text-orange-600 hidden lg:inline whitespace-nowrap">
                               Scheduled: {new Date(campaign.scheduledAt).toLocaleString('en-US', { timeZone: 'Asia/Colombo' })}
                             </span>
                           )}
                           <button
                             onClick={() => handleDeleteCampaign(campaign.id)}
-                            className="text-red-500 hover:text-red-700 transition-colors"
+                            className="text-red-500 hover:text-red-700 transition-colors p-1 sm:p-0"
+                            title="Delete"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                           </button>
                         </div>
                       </td>

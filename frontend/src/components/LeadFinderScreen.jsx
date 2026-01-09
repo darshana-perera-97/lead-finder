@@ -375,7 +375,7 @@ export function LeadFinderScreen({ user }) {
   };
 
   return (
-    <div className="flex-1 p-8">
+    <div className="flex-1 p-4 md:p-6 lg:p-8">
       {/* Greeting Section */}
       <div className="mb-6">
         <h2 className="text-2xl font-semibold text-[#2D3748] mb-2">
@@ -400,7 +400,7 @@ export function LeadFinderScreen({ user }) {
       </div>
 
       {/* Analytics Section */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
           <div className="flex items-center justify-between mb-2">
             <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -435,8 +435,8 @@ export function LeadFinderScreen({ user }) {
       <h2 className="text-xl font-semibold text-[#718096] pt-6">Find New Leads</h2>
 
       {/* Search Section */}
-      <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-        <div className="grid grid-cols-3 gap-4 mb-4">
+      <div className="bg-white rounded-lg shadow-sm p-4 md:p-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div>
             <label className="block text-sm text-[#718096] mb-2">Select Industry/Keyword</label>
             <input
@@ -526,8 +526,8 @@ export function LeadFinderScreen({ user }) {
 
       {/* Results Popup Modal */}
       {showPopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[95vh] sm:max-h-[90vh] flex flex-col">
             {/* Modal Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h2 className="text-2xl font-semibold text-[#2D3748]">Search Results</h2>
@@ -540,7 +540,7 @@ export function LeadFinderScreen({ user }) {
             </div>
 
             {/* Modal Content */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-3 sm:p-6">
               {isLoading ? (
                 <div className="flex flex-col items-center justify-center py-12">
                   <Loader2 className="w-8 h-8 text-[#008080] animate-spin mb-4" />
@@ -555,23 +555,23 @@ export function LeadFinderScreen({ user }) {
                   <p className="text-[#718096]">No leads found. Try adjusting your search criteria.</p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
+                <div className="overflow-x-auto mx-2 sm:mx-4 md:mx-6 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                  <table className="w-full min-w-[500px] sm:min-w-[640px]">
                     <thead className="bg-[#F5F7F9] border-b border-[#718096]/20">
                       <tr>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-[#2D3748]">Business Name</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-[#2D3748]">Contact Number</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-[#2D3748]">Email</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-[#2D3748]">Address</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-[#2D3748]">Website</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-[#2D3748]">Actions</th>
+                        <th className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm font-semibold text-[#2D3748] whitespace-nowrap">Business Name</th>
+                        <th className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm font-semibold text-[#2D3748] whitespace-nowrap hidden sm:table-cell">Contact Number</th>
+                        <th className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm font-semibold text-[#2D3748] whitespace-nowrap">Email</th>
+                        <th className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm font-semibold text-[#2D3748] whitespace-nowrap hidden lg:table-cell">Address</th>
+                        <th className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm font-semibold text-[#2D3748] whitespace-nowrap hidden md:table-cell">Website</th>
+                        <th className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-left text-xs sm:text-sm font-semibold text-[#2D3748] whitespace-nowrap">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {paginatedSearchResults.map((lead, index) => (
                         <tr key={lead.id} className={index % 2 === 0 ? 'bg-white' : 'bg-[#F5F7F9]/50'}>
-                          <td className="px-6 py-4 text-sm font-medium text-[#2D3748]">{lead.businessName}</td>
-                          <td className="px-6 py-4 text-sm text-[#2D3748]">
+                          <td className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-xs sm:text-sm font-medium text-[#2D3748] max-w-[120px] sm:max-w-none truncate sm:truncate-none">{lead.businessName}</td>
+                          <td className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-xs sm:text-sm text-[#2D3748] hidden sm:table-cell whitespace-nowrap">
                             {lead.phone !== 'N/A' ? (
                               <a 
                                 href={`tel:${lead.phone.replace(/\s/g, '')}`}
@@ -583,11 +583,11 @@ export function LeadFinderScreen({ user }) {
                               <span className="text-[#718096]">N/A</span>
                             )}
                           </td>
-                          <td className="px-6 py-4 text-sm text-[#2D3748]">
+                          <td className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-xs sm:text-sm text-[#2D3748]">
                             {lead.email !== 'N/A' ? (
                               <a 
                                 href={`mailto:${lead.email}`}
-                                className="text-[#008080] hover:text-[#006666] hover:underline"
+                                className="text-[#008080] hover:text-[#006666] hover:underline break-all max-w-[150px] sm:max-w-none inline-block"
                               >
                                 {lead.email}
                               </a>
@@ -595,13 +595,15 @@ export function LeadFinderScreen({ user }) {
                               <span className="text-[#718096]">N/A</span>
                             )}
                           </td>
-                          <td className="px-6 py-4 text-sm text-[#718096]">{lead.address}</td>
-                          <td className="px-6 py-4 text-sm text-[#008080] hover:underline">
+                          <td className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-xs sm:text-sm text-[#718096] hidden lg:table-cell max-w-[200px] truncate">{lead.address}</td>
+                          <td className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-xs sm:text-sm text-[#008080] hover:underline hidden md:table-cell">
                             {lead.website !== 'N/A' ? (
                               <a 
                                 href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`} 
                                 target="_blank" 
                                 rel="noopener noreferrer"
+                                className="break-all max-w-[150px] inline-block truncate"
+                                title={lead.website}
                               >
                                 {lead.website}
                               </a>
@@ -609,19 +611,19 @@ export function LeadFinderScreen({ user }) {
                               <span className="text-[#718096]">N/A</span>
                             )}
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4">
                             {lead.isSaved ? (
-                              <span className="flex items-center gap-1 text-green-600 text-sm">
-                                <Database className="w-4 h-4" />
-                                Saved
+                              <span className="flex items-center gap-1 text-green-600 text-xs sm:text-sm">
+                                <Database className="w-3 h-3 sm:w-4 sm:h-4" />
+                                <span className="hidden md:inline">Saved</span>
                               </span>
                             ) : (
                               <button
                                 onClick={() => handleSaveLead(lead)}
-                                className="flex items-center gap-1 text-[#008080] hover:text-[#006666] transition-colors"
+                                className="flex items-center gap-0.5 sm:gap-1 text-[#008080] hover:text-[#006666] transition-colors text-xs sm:text-sm"
                               >
-                                <Plus className="w-4 h-4" />
-                                <span className="text-sm">Save</span>
+                                <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+                                <span className="hidden sm:inline">Save</span>
                               </button>
                             )}
                           </td>
@@ -648,13 +650,13 @@ export function LeadFinderScreen({ user }) {
                   }}
                 />
               )}
-              <div className="flex items-center justify-between p-6">
-                <p className="text-sm text-[#718096]">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 sm:p-6">
+                <p className="text-xs sm:text-sm text-[#718096]">
                   Found {searchResults.length} {searchResults.length === 1 ? 'lead' : 'leads'}
                 </p>
                 <button
                   onClick={() => setShowPopup(false)}
-                  className="bg-[#008080] text-white px-6 py-2 rounded-lg hover:bg-[#006666] transition-colors"
+                  className="w-full sm:w-auto bg-[#008080] text-white px-6 py-2 rounded-lg hover:bg-[#006666] transition-colors text-sm"
                 >
                   Close
                 </button>
