@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Mail, Lock, LogIn } from 'lucide-react';
+import { getApiUrl } from '../config';
 
 export function LoginPage({ onLogin }) {
   const [email, setEmail] = useState('');
@@ -13,7 +14,7 @@ export function LoginPage({ onLogin }) {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:4001/api/auth/login', {
+      const response = await fetch(getApiUrl('api/auth/login'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

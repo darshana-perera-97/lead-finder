@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { User, Lock, Bell, Save } from 'lucide-react';
+import { getApiUrl } from '../config';
 
 export function SettingsScreen() {
   const [fullName, setFullName] = useState('John Doe');
@@ -19,7 +20,7 @@ export function SettingsScreen() {
     const loadProfileSettings = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:4001/api/settings/profile', {
+        const response = await fetch(getApiUrl('api/settings/profile'), {
           headers: {
             'Authorization': `Bearer ${token}`
           }

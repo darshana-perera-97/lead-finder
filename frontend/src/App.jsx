@@ -10,6 +10,7 @@ import { AnalyticsScreen } from './components/AnalyticsScreen';
 import { LinkAccountsScreen } from './components/LinkAccountsScreen';
 import { SettingsScreen } from './components/SettingsScreen';
 import { BackendErrorOverlay } from './components/BackendErrorOverlay';
+import { getApiUrl } from './config';
 
 function App() {
   const [activeTab, setActiveTab] = useState('lead-finder');
@@ -39,7 +40,7 @@ function App() {
 
     if (token && userData) {
       // Verify token with backend
-      fetch('http://localhost:4001/api/auth/me', {
+      fetch(getApiUrl('api/auth/me'), {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -81,7 +82,7 @@ function App() {
       const token = localStorage.getItem('token');
       if (!token) return;
       
-      const response = await fetch('http://localhost:4001/api/whatsapp/status', {
+      const response = await fetch(getApiUrl('api/whatsapp/status'), {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -116,7 +117,7 @@ function App() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
       
-      const response = await fetch('http://localhost:4001/api/auth/me', {
+      const response = await fetch(getApiUrl('api/auth/me'), {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token || ''}`
@@ -182,7 +183,7 @@ function App() {
     
     // Call logout endpoint
     if (token) {
-      fetch('http://localhost:4001/api/auth/logout', {
+      fetch(getApiUrl('api/auth/logout'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`

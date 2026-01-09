@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Search, Database, Megaphone, Mail, MessageSquare, Loader2, TrendingUp } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { getApiUrl } from '../config';
 
 export function AnalyticsScreen() {
   const [analytics, setAnalytics] = useState(null);
@@ -28,7 +29,7 @@ export function AnalyticsScreen() {
       setLoading(true);
       setError(null);
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:4001/api/analytics', {
+      const response = await fetch(getApiUrl('api/analytics'), {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -52,7 +53,7 @@ export function AnalyticsScreen() {
   const loadCampaigns = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:4001/api/campaigns', {
+      const response = await fetch(getApiUrl('api/campaigns'), {
         headers: {
           'Authorization': `Bearer ${token}`
         }

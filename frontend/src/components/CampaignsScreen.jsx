@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { ArrowLeft, Plus, Send, Loader2, Trash2, Clock, X } from 'lucide-react';
 import { Pagination } from './Pagination';
+import { getApiUrl } from '../config';
 
 export function CampaignsScreen() {
   const [selectedCampaign, setSelectedCampaign] = useState(null);
@@ -44,7 +45,7 @@ export function CampaignsScreen() {
       }
       setError(null);
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:4001/api/campaigns', {
+      const response = await fetch(getApiUrl('api/campaigns'), {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -78,7 +79,7 @@ export function CampaignsScreen() {
     try {
       setSendingCampaignId(campaignId);
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:4001/api/campaigns/${campaignId}/send`, {
+      const response = await fetch(getApiUrl(`api/campaigns/${campaignId}/send`), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -108,7 +109,7 @@ export function CampaignsScreen() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:4001/api/campaigns/${campaignId}`, {
+      const response = await fetch(getApiUrl(`api/campaigns/${campaignId}`), {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -185,7 +186,7 @@ export function CampaignsScreen() {
       const sriLankanDateTimeString = `${year}-${month}-${day}T${hours}:${minutes}:00+05:30`;
       
       // Send the datetime string - backend will parse it correctly
-      const response = await fetch(`http://localhost:4001/api/campaigns/${selectedCampaignForSchedule.id}/schedule`, {
+      const response = await fetch(getApiUrl(`api/campaigns/${selectedCampaignForSchedule.id}/schedule`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Plus, Trash2, Edit2, Eye, X, Loader2, MessageSquare, Mail, Send, Download, ArrowLeft } from 'lucide-react';
 import { Pagination } from './Pagination';
+import { getApiUrl, getImageUrl } from '../config';
 
 export function TemplatesScreen() {
   const [templates, setTemplates] = useState([]);
@@ -110,7 +111,7 @@ export function TemplatesScreen() {
       setLoading(true);
       setError(null);
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:4001/api/templates', {
+      const response = await fetch(getApiUrl('api/templates'), {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -334,8 +335,8 @@ export function TemplatesScreen() {
       }
 
       const url = editingTemplate 
-        ? `http://localhost:4001/api/templates/${editingTemplate.id}`
-        : 'http://localhost:4001/api/templates';
+        ? getApiUrl(`api/templates/${editingTemplate.id}`)
+        : getApiUrl('api/templates');
       
       const response = await fetch(url, {
         method: editingTemplate ? 'PUT' : 'POST',
@@ -376,7 +377,7 @@ export function TemplatesScreen() {
       pattern: template.pattern || '',
       useHtml: template.useHtml || false
     });
-    setImagePreview(template.image ? `http://localhost:4001${template.image}` : null);
+    setImagePreview(template.image ? getImageUrl(template.image) : null);
     setShowModal(true);
   };
 
@@ -387,7 +388,7 @@ export function TemplatesScreen() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:4001/api/templates/${templateId}`, {
+      const response = await fetch(getApiUrl(`api/templates/${templateId}`), {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -605,7 +606,7 @@ export function TemplatesScreen() {
           country: 'Sri Lanka'
         };
 
-        const response = await fetch('http://localhost:4001/api/leads', {
+          const response = await fetch(getApiUrl('api/leads'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -645,7 +646,7 @@ export function TemplatesScreen() {
       }
 
       // Create campaign with the template and leads
-      const campaignResponse = await fetch('http://localhost:4001/api/campaigns', {
+      const campaignResponse = await fetch(getApiUrl('api/campaigns'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -750,7 +751,7 @@ export function TemplatesScreen() {
                 {template.image && (
                   <div className="mb-4">
                     <img 
-                      src={`http://localhost:4001${template.image}`} 
+                      src={getImageUrl(template.image)} 
                       alt="Template" 
                       className="w-full h-32 object-cover rounded"
                     />

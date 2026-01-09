@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Info, Plus, Search, Database, MessageSquare, X, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { Pagination } from './Pagination';
+import { getApiUrl } from '../config';
 
 export function LeadFinderScreen({ user }) {
   const [profileSettings, setProfileSettings] = useState(null);
@@ -15,7 +16,7 @@ export function LeadFinderScreen({ user }) {
     const loadProfileSettings = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:4001/api/settings/profile', {
+        const response = await fetch(getApiUrl('api/settings/profile'), {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -50,7 +51,7 @@ export function LeadFinderScreen({ user }) {
     const loadAnalytics = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:4001/api/analytics', {
+        const response = await fetch(getApiUrl('api/analytics'), {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -75,7 +76,7 @@ export function LeadFinderScreen({ user }) {
     const loadSavedLeads = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:4001/api/leads', {
+        const response = await fetch(getApiUrl('api/leads'), {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -100,7 +101,7 @@ export function LeadFinderScreen({ user }) {
     const checkWhatsAppStatus = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:4001/api/whatsapp/status', {
+        const response = await fetch(getApiUrl('api/whatsapp/status'), {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -167,7 +168,7 @@ export function LeadFinderScreen({ user }) {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:4001/api/search', {
+      const response = await fetch(getApiUrl('api/search'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

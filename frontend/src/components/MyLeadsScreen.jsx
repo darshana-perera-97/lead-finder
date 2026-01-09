@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Trash2, Loader2, Search, X, MessageSquare, Mail } from 'lucide-react';
 import { Pagination } from './Pagination';
+import { getApiUrl, getImageUrl } from '../config';
 
 export function MyLeadsScreen() {
   const [selectedLeads, setSelectedLeads] = useState([]);
@@ -53,7 +54,7 @@ export function MyLeadsScreen() {
         setLoading(true);
         setError(null);
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:4001/api/leads', {
+        const response = await fetch(getApiUrl('api/leads'), {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -84,7 +85,7 @@ export function MyLeadsScreen() {
       const loadTemplates = async () => {
         try {
           const token = localStorage.getItem('token');
-          const response = await fetch('http://localhost:4001/api/templates', {
+          const response = await fetch(getApiUrl('api/templates'), {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -193,7 +194,7 @@ export function MyLeadsScreen() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:4001/api/campaigns', {
+      const response = await fetch(getApiUrl('api/campaigns'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -234,7 +235,7 @@ export function MyLeadsScreen() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:4001/api/campaigns/${campaignId}/send`, {
+      const response = await fetch(getApiUrl(`api/campaigns/${campaignId}/send`), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -265,7 +266,7 @@ export function MyLeadsScreen() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:4001/api/leads/${leadId}`, {
+      const response = await fetch(getApiUrl(`api/leads/${leadId}`), {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -552,7 +553,7 @@ export function MyLeadsScreen() {
                     {selectedTemplate.image && (
                       <div className="mt-2">
                         <img 
-                          src={`http://localhost:4001${selectedTemplate.image}`} 
+                          src={getImageUrl(selectedTemplate.image)} 
                           alt="Template" 
                           className="max-w-full h-32 object-contain rounded"
                         />

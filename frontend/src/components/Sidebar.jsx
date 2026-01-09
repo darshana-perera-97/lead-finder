@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Search, Database, Megaphone, Link, Settings, User, FileText, BarChart3, X } from 'lucide-react';
+import { getApiUrl } from '../config';
 
 export function Sidebar({ activeTab, onTabChange, user, isOpen = false, onClose }) {
   const [profileSettings, setProfileSettings] = useState(null);
@@ -8,7 +9,7 @@ export function Sidebar({ activeTab, onTabChange, user, isOpen = false, onClose 
     const loadProfileSettings = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:4001/api/settings/profile', {
+        const response = await fetch(getApiUrl('api/settings/profile'), {
           headers: {
             'Authorization': `Bearer ${token}`
           }

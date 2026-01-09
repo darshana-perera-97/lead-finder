@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Bell, Search, LogOut, CheckCircle2, XCircle, MessageCircle, Menu } from 'lucide-react';
 import { NotificationsDropdown } from './NotificationsDropdown';
+import { getApiUrl } from '../config';
 
 export function TopBar({ user, onLogout, whatsappConnected, onMenuClick }) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -18,7 +19,7 @@ export function TopBar({ user, onLogout, whatsappConnected, onMenuClick }) {
     const loadProfileSettings = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:4001/api/settings/profile', {
+        const response = await fetch(getApiUrl('api/settings/profile'), {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -57,7 +58,7 @@ export function TopBar({ user, onLogout, whatsappConnected, onMenuClick }) {
     const loadUnreadCount = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:4001/api/notifications/unread', {
+        const response = await fetch(getApiUrl('api/notifications/unread'), {
           headers: {
             'Authorization': `Bearer ${token}`
           }

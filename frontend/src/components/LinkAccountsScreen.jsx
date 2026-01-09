@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Mail, MessageCircle, CheckCircle2, XCircle, RefreshCw, LogOut, Phone, User } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import { getApiUrl } from '../config';
 
 export function LinkAccountsScreen() {
   const [emailConnected, setEmailConnected] = useState(false);
@@ -20,7 +21,7 @@ export function LinkAccountsScreen() {
     const loadSmtpConfig = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:4001/api/smtp/config', {
+        const response = await fetch(getApiUrl('api/smtp/config'), {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -132,7 +133,7 @@ export function LinkAccountsScreen() {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:4001/api/whatsapp/qrcode', {
+      const response = await fetch(getApiUrl('api/whatsapp/qrcode'), {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -179,7 +180,7 @@ export function LinkAccountsScreen() {
     const checkStatusAndGenerateQR = async () => {
       try {
         const token = localStorage.getItem('token');
-        const statusResponse = await fetch('http://localhost:4001/api/whatsapp/status', {
+        const statusResponse = await fetch(getApiUrl('api/whatsapp/status'), {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -220,7 +221,7 @@ export function LinkAccountsScreen() {
       
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:4001/api/whatsapp/status', {
+        const response = await fetch(getApiUrl('api/whatsapp/status'), {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -255,7 +256,7 @@ export function LinkAccountsScreen() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:4001/api/whatsapp/disconnect', {
+      const response = await fetch(getApiUrl('api/whatsapp/disconnect'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
