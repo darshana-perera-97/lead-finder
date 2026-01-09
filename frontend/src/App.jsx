@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
-import { LoginPage } from './components/LoginPage';
+import { LandingPage } from './components/LandingPage';
 import { LeadFinderScreen } from './components/LeadFinderScreen';
 import { MyLeadsScreen } from './components/MyLeadsScreen';
 import { CampaignsScreen } from './components/CampaignsScreen';
@@ -11,6 +12,92 @@ import { LinkAccountsScreen } from './components/LinkAccountsScreen';
 import { SettingsScreen } from './components/SettingsScreen';
 import { BackendErrorOverlay } from './components/BackendErrorOverlay';
 import { getApiUrl } from './config';
+
+// Protected Route Component
+function ProtectedRoute({ children, isAuthenticated }) {
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+  return children;
+}
+
+// Public Route Component (redirects to dashboard if authenticated)
+function PublicRoute({ children, isAuthenticated }) {
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return children;
+}
+
+// Dashboard Component
+function Dashboard({ 
+  activeTab, 
+  setActiveTab, 
+  user, 
+  onLogout, 
+  whatsappConnected, 
+  sidebarOpen, 
+  setSidebarOpen,
+  backendDown,
+  handleRetryConnection
+}) {
+  const renderScreen = () => {
+    switch (activeTab) {
+      case 'lead-finder':
+        return <LeadFinderScreen user={user} />;
+      case 'my-leads':
+        return <MyLeadsScreen />;
+      case 'campaigns':
+        return <CampaignsScreen />;
+      case 'templates':
+        return <TemplatesScreen />;
+      case 'analytics':
+        return <AnalyticsScreen />;
+      case 'link-accounts':
+        return <LinkAccountsScreen />;
+      case 'settings':
+        return <SettingsScreen />;
+      default:
+        return <LeadFinderScreen user={user} />;
+    }
+  };
+
+  return (
+    <>
+      <BackendErrorOverlay show={backendDown} onRetry={handleRetryConnection} />
+      <div className="flex h-screen bg-white overflow-hidden">
+        {/* Mobile overlay */}
+        {sidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+        <Sidebar 
+          activeTab={activeTab} 
+          onTabChange={(tab) => {
+            setActiveTab(tab);
+            setSidebarOpen(false);
+          }} 
+          user={user}
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+        />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <TopBar 
+            user={user} 
+            onLogout={onLogout} 
+            whatsappConnected={whatsappConnected}
+            onMenuClick={() => setSidebarOpen(!sidebarOpen)}
+          />
+          <div className="flex-1 overflow-y-auto bg-white">
+            {renderScreen()}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
 
 function App() {
   const [activeTab, setActiveTab] = useState('lead-finder');
@@ -198,27 +285,6 @@ function App() {
     setIsAuthenticated(false);
   };
 
-  const renderScreen = () => {
-    switch (activeTab) {
-      case 'lead-finder':
-        return <LeadFinderScreen user={user} />;
-      case 'my-leads':
-        return <MyLeadsScreen />;
-      case 'campaigns':
-        return <CampaignsScreen />;
-      case 'templates':
-        return <TemplatesScreen />;
-      case 'analytics':
-        return <AnalyticsScreen />;
-      case 'link-accounts':
-        return <LinkAccountsScreen />;
-      case 'settings':
-        return <SettingsScreen />;
-      default:
-        return <LeadFinderScreen user={user} />;
-    }
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
@@ -230,44 +296,52 @@ function App() {
     );
   }
 
-  if (!isAuthenticated) {
-    return <LoginPage onLogin={handleLogin} />;
-  }
-
   return (
-    <>
-      <BackendErrorOverlay show={backendDown && isAuthenticated} onRetry={handleRetryConnection} />
-    <div className="flex h-screen bg-white overflow-hidden">
-      {/* Mobile overlay */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
+    <BrowserRouter>
+      <Routes>
+        {/* Public Route - Landing Page */}
+        <Route 
+          path="/" 
+          element={
+            <PublicRoute isAuthenticated={isAuthenticated}>
+              <LandingPage onLogin={handleLogin} />
+            </PublicRoute>
+          } 
         />
-      )}
-      <Sidebar 
-        activeTab={activeTab} 
-        onTabChange={(tab) => {
-          setActiveTab(tab);
-          setSidebarOpen(false); // Close sidebar on mobile when tab changes
-        }} 
-        user={user}
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-      />
-      <div className="flex-1 flex flex-col overflow-hidden">
-          <TopBar 
-            user={user} 
-            onLogout={handleLogout} 
-            whatsappConnected={whatsappConnected}
-            onMenuClick={() => setSidebarOpen(!sidebarOpen)}
-          />
-        <div className="flex-1 overflow-y-auto bg-white">
-          {renderScreen()}
-        </div>
-      </div>
-    </div>
-    </>
+        
+        {/* Protected Route - Dashboard */}
+        <Route 
+          path="/dashboard" 
+          element={
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <Dashboard
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                user={user}
+                onLogout={handleLogout}
+                whatsappConnected={whatsappConnected}
+                sidebarOpen={sidebarOpen}
+                setSidebarOpen={setSidebarOpen}
+                backendDown={backendDown}
+                handleRetryConnection={handleRetryConnection}
+              />
+            </ProtectedRoute>
+          } 
+        />
+        
+        {/* Catch all - redirect to dashboard if authenticated, otherwise to landing */}
+        <Route 
+          path="*" 
+          element={
+            isAuthenticated ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          } 
+        />
+      </Routes>
+    </BrowserRouter>
   );
 }
 

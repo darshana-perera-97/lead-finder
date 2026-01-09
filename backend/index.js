@@ -25,6 +25,9 @@ const TEMPLATES_FILE = path.join(DATA_DIR, 'templates.json');
 const CAMPAIGNS_FILE = path.join(DATA_DIR, 'campaigns.json');
 const SMTP_CONFIGS_FILE = path.join(DATA_DIR, 'smtp_configs.json');
 
+// Frontend build directory path
+const FRONTEND_BUILD_DIR = path.join(__dirname, '..', 'frontend', 'dist');
+
 // Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -504,6 +507,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/api/images', express.static(IMAGES_DIR));
 
+// Serve static files from the frontend build directory
+// Always register static middleware - it will only serve files if they exist
+app.use(express.static(FRONTEND_BUILD_DIR));
+
 // WhatsApp Web Client Setup
 let whatsappClient = null;
 let whatsappQRCode = null;
@@ -699,10 +706,7 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// Basic route
-app.get('/', (req, res) => {
-  res.json({ message: 'Welcome to the Lead Finder API' });
-});
+// Root route is handled by static middleware and catch-all route below
 
 // Health check route
 app.get('/health', (req, res) => {
@@ -3254,6 +3258,22 @@ const checkScheduledCampaigns = async () => {
 // Run scheduler every minute
 setInterval(checkScheduledCampaigns, 60000); // Check every 60 seconds
 
+// Catch-all handler: send back React's index.html file for client-side routing
+// This must be after all API routes but before app.listen
+app.get('*', (req, res) => {
+  // Don't handle API routes
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ error: 'API endpoint not found' });
+  }
+  
+  const indexPath = path.join(FRONTEND_BUILD_DIR, 'index.html');
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.status(404).json({ error: 'Frontend not built. Please build the frontend first.' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
   console.log('⏰ Campaign scheduler started (checking every minute)');
@@ -3292,5 +3312,12 @@ app.listen(PORT, () => {
   console.log('  POST /api/campaigns/:id/send (protected)');
   console.log('  DELETE /api/campaigns/:id (protected)');
   console.log('  GET  /api/images/* (static files)');
+  console.log('  GET  /* (frontend - serves React app)');
+  
+  if (fs.existsSync(FRONTEND_BUILD_DIR)) {
+    console.log('✅ Frontend build directory found - serving frontend from backend');
+  } else {
+    console.log('⚠️  Frontend build directory not found - run "npm run build" in frontend directory');
+  }
 });
 

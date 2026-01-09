@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, LogIn } from 'lucide-react';
 import { getApiUrl } from '../config';
 
 export function LoginPage({ onLogin }) {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -34,6 +36,9 @@ export function LoginPage({ onLogin }) {
 
       // Call onLogin callback
       onLogin(data.user, data.token);
+      
+      // Navigate to dashboard after successful login
+      navigate('/dashboard');
     } catch (err) {
       setError(err.message || 'An error occurred during login');
     } finally {
