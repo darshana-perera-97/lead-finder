@@ -26,7 +26,8 @@ const CAMPAIGNS_FILE = path.join(DATA_DIR, 'campaigns.json');
 const SMTP_CONFIGS_FILE = path.join(DATA_DIR, 'smtp_configs.json');
 
 // Frontend build directory path
-const FRONTEND_BUILD_DIR = path.join(__dirname, '..', 'frontend', 'dist');
+const FRONTEND_BUILD_DIR = '../frontend/dist';
+// const FRONTEND_BUILD_DIR = path.join(__dirname, '..', 'frontend', 'dist');
 
 // Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
