@@ -645,10 +645,22 @@ const initializeWhatsApp = () => {
         console.log('✅ WhatsApp client initialization started');
       })
       .catch(err => {
-        console.error('❌ Error initializing WhatsApp client:', err.message);
+        const errorMessage = err.message || err.toString() || '';
+        const errorString = JSON.stringify(err, null, 2);
         
-        // Check for missing system dependencies (Linux)
-        if (err.message.includes('libatk') || err.message.includes('shared libraries') || err.message.includes('cannot open shared object file')) {
+        console.error('❌ Error initializing WhatsApp client:', errorMessage);
+        
+        // Check for missing system dependencies (Linux) - check multiple error formats
+        const isDependencyError = 
+          errorMessage.includes('libatk') || 
+          errorMessage.includes('shared libraries') || 
+          errorMessage.includes('cannot open shared object file') ||
+          errorMessage.includes('Code: 127') ||
+          errorString.includes('libatk') ||
+          errorString.includes('shared libraries') ||
+          errorString.includes('cannot open shared object file');
+        
+        if (isDependencyError) {
           console.error('');
           console.error('⚠️  MISSING SYSTEM DEPENDENCIES DETECTED');
           console.error('📦 Puppeteer requires system libraries to run on Linux.');
@@ -656,15 +668,22 @@ const initializeWhatsApp = () => {
           console.error('🔧 To fix this, run the installation script:');
           console.error('   bash INSTALL_PUPPETEER_DEPS.sh');
           console.error('');
-          console.error('📖 Or manually install dependencies:');
-          console.error('   Ubuntu/Debian: sudo apt-get install -y libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libgtk-3-0 libgbm1 libasound2 libxcomposite1 libxdamage1 libxfixes3 libxkbcommon0 libxrandr2 libxss1 libgconf-2-4 libxshmfence1');
-          console.error('   CentOS/RHEL: sudo yum install -y alsa-lib atk cups-libs gtk3 libXcomposite libXcursor libXdamage libXext libXi libXrandr libXScrnSaver libXtst pango');
+          console.error('📖 Or manually install dependencies (Ubuntu/Debian):');
+          console.error('   sudo apt-get update');
+          console.error('   sudo apt-get install -y libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libgtk-3-0 libgbm1 libasound2 libxcomposite1 libxdamage1 libxfixes3 libxkbcommon0 libxrandr2 libxss1 libgconf-2-4 libxshmfence1 libnss3 libnspr4 libx11-xcb1 libxcb1 ca-certificates fonts-liberation libappindicator3-1 libdbus-1-3 libgdk-pixbuf2.0-0 libglib2.0-0 libpango-1.0-0 libpangocairo-1.0-0 libx11-6 libxext6 libxi6 libxrender1 libxtst6 lsb-release wget xdg-utils');
+          console.error('');
+          console.error('📖 For CentOS/RHEL:');
+          console.error('   sudo yum install -y alsa-lib atk cups-libs gtk3 libXcomposite libXcursor libXdamage libXext libXi libXrandr libXScrnSaver libXtst pango');
           console.error('');
           console.error('📚 More info: https://pptr.dev/troubleshooting');
           console.error('');
+          console.error('💡 The server will continue running, but WhatsApp features will be unavailable until dependencies are installed.');
+          console.error('   After installing dependencies, restart the server: pm2 restart index');
+          console.error('');
         }
         
-        if (retries > 0) {
+        if (retries > 0 && !isDependencyError) {
+          // Only retry if it's not a dependency error
           console.log(`🔄 Retrying initialization... (${retries} attempts left)`);
           setTimeout(() => {
             whatsappClient = null;
@@ -672,13 +691,15 @@ const initializeWhatsApp = () => {
           }, 5000);
         } else {
           console.error('❌ Failed to initialize WhatsApp client after multiple attempts');
-          if (!err.message.includes('libatk') && !err.message.includes('shared libraries')) {
+          if (!isDependencyError) {
             console.error('💡 Troubleshooting tips:');
             console.error('   1. Make sure Chrome/Chromium is installed');
             console.error('   2. Try running: npm install puppeteer');
             console.error('   3. Check if antivirus is blocking browser launch');
             console.error('   4. WhatsApp Web will work when QR code endpoint is called');
           }
+          // Don't set to null if it's a dependency error - keep the client object but mark as failed
+          // This way the API can return a helpful error message
           whatsappClient = null;
         }
       });
@@ -963,10 +984,35 @@ app.get('/api/whatsapp/qrcode', authenticateToken, async (req, res) => {
         await new Promise(resolve => setTimeout(resolve, 2000));
       } catch (initError) {
         console.error('Failed to initialize WhatsApp client:', initError.message);
+        
+        const errorMessage = initError.message || initError.toString() || '';
+        const errorString = JSON.stringify(initError, null, 2);
+        const isDependencyError = 
+          errorMessage.includes('libatk') || 
+          errorMessage.includes('shared libraries') || 
+          errorMessage.includes('cannot open shared object file') ||
+          errorMessage.includes('Code: 127') ||
+          errorString.includes('libatk') ||
+          errorString.includes('shared libraries') ||
+          errorString.includes('cannot open shared object file');
+        
+        if (isDependencyError) {
+          return res.status(500).json({
+            error: 'WhatsApp client initialization failed - Missing system dependencies',
+            message: 'Puppeteer requires system libraries to run on Linux. Please install dependencies.',
+            details: 'Run: bash INSTALL_PUPPETEER_DEPS.sh or see DEPLOYMENT.md for manual installation steps.',
+            troubleshooting: {
+              ubuntu_debian: 'sudo apt-get update && sudo apt-get install -y libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libgtk-3-0 libgbm1 libasound2 libxcomposite1 libxdamage1 libxfixes3 libxkbcommon0 libxrandr2 libxss1 libgconf-2-4 libxshmfence1 libnss3 libnspr4 libx11-xcb1 libxcb1 ca-certificates fonts-liberation libappindicator3-1 libdbus-1-3 libgdk-pixbuf2.0-0 libglib2.0-0 libpango-1.0-0 libpangocairo-1.0-0 libx11-6 libxext6 libxi6 libxrender1 libxtst6 lsb-release wget xdg-utils',
+              centos_rhel: 'sudo yum install -y alsa-lib atk cups-libs gtk3 libXcomposite libXcursor libXdamage libXext libXi libXrandr libXScrnSaver libXtst pango',
+              more_info: 'https://pptr.dev/troubleshooting'
+            }
+          });
+        }
+        
         return res.status(500).json({
           error: 'WhatsApp client initialization failed',
           message: 'Please check server logs. Make sure Chrome/Chromium is installed.',
-          details: initError.message
+          details: errorMessage
         });
       }
     }
