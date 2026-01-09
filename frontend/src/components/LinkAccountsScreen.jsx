@@ -53,7 +53,7 @@ export function LinkAccountsScreen() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:4001/api/smtp/config', {
+      const response = await fetch(getApiUrl('api/smtp/config'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -89,7 +89,7 @@ export function LinkAccountsScreen() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:4001/api/smtp/config', {
+      const response = await fetch(getApiUrl('api/smtp/config'), {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`

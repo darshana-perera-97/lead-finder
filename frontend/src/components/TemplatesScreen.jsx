@@ -620,7 +620,7 @@ export function TemplatesScreen() {
           return data.id;
         } else if (response.status === 409) {
           // Duplicate lead - try to find existing lead
-          const leadsResponse = await fetch('http://localhost:4001/api/leads', {
+          const leadsResponse = await fetch(getApiUrl('api/leads'), {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -1297,7 +1297,7 @@ export function TemplatesScreen() {
                   {previewTemplate.image && (
                     <div className="mb-4">
                       <img 
-                        src={`http://localhost:4001${previewTemplate.image}`} 
+                        src={getImageUrl(previewTemplate.image)} 
                         alt="Template" 
                         className="w-full max-w-md rounded"
                       />
@@ -1322,7 +1322,7 @@ export function TemplatesScreen() {
                   {previewTemplate.image && (
                     <div className="mb-4">
                       <img 
-                        src={`http://localhost:4001${previewTemplate.image}`} 
+                        src={getImageUrl(previewTemplate.image)} 
                         alt="Template" 
                         className="w-full max-w-md rounded"
                       />

@@ -192,7 +192,7 @@ export function LeadFinderScreen({ user }) {
       let currentSavedLeads = savedLeads;
       if (savedLeads.length === 0) {
         try {
-          const savedLeadsResponse = await fetch('http://localhost:4001/api/leads', {
+          const savedLeadsResponse = await fetch(getApiUrl('api/leads'), {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -269,7 +269,7 @@ export function LeadFinderScreen({ user }) {
       
       // Refresh analytics after search
       try {
-        const analyticsResponse = await fetch('http://localhost:4001/api/analytics', {
+        const analyticsResponse = await fetch(getApiUrl('api/analytics'), {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -294,7 +294,7 @@ export function LeadFinderScreen({ user }) {
   const handleSaveLead = async (lead) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:4001/api/leads', {
+      const response = await fetch(getApiUrl('api/leads'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -326,7 +326,7 @@ export function LeadFinderScreen({ user }) {
         );
         
         // Reload saved leads
-        const savedLeadsResponse = await fetch('http://localhost:4001/api/leads', {
+        const savedLeadsResponse = await fetch(getApiUrl('api/leads'), {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -338,7 +338,7 @@ export function LeadFinderScreen({ user }) {
         
         // Refresh analytics
         try {
-          const analyticsResponse = await fetch('http://localhost:4001/api/analytics', {
+          const analyticsResponse = await fetch(getApiUrl('api/analytics'), {
             headers: {
               'Authorization': `Bearer ${token}`
             }

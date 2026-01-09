@@ -233,10 +233,24 @@ const readLeads = () => {
   try {
     if (fs.existsSync(LEADS_FILE)) {
       const data = fs.readFileSync(LEADS_FILE, 'utf8');
-      return JSON.parse(data);
+      if (!data || data.trim() === '') {
+        return [];
+      }
+      const parsed = JSON.parse(data);
+      // Ensure it's an array
+      if (!Array.isArray(parsed)) {
+        console.error('Leads file does not contain an array, resetting to empty array');
+        return [];
+      }
+      return parsed;
     }
   } catch (error) {
     console.error('Error reading leads:', error);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      path: LEADS_FILE
+    });
   }
   return [];
 };
@@ -1425,11 +1439,16 @@ app.post('/api/leads', authenticateToken, (req, res) => {
     const userId = req.user.id;
     const { businessName, phone, email, address, website, industry, city, country, notes } = req.body;
     
+    console.log('📝 Saving lead request:', { userId, businessName, email, phone });
+    
     if (!businessName) {
+      console.error('❌ Validation failed: Business name is required');
       return res.status(400).json({ error: 'Business name is required' });
     }
     
+    console.log('📖 Reading leads from file...');
     const leads = readLeads();
+    console.log(`✅ Read ${leads.length} leads from file`);
     
     // Check for duplicates - compare by businessName, email, or phone
     const normalizeString = (str) => (str || '').toLowerCase().trim();
@@ -1467,6 +1486,14 @@ app.post('/api/leads', authenticateToken, (req, res) => {
       });
     }
     
+    // Validate leads array - ensure it's always an array
+    let validLeads = Array.isArray(leads) ? leads : [];
+    if (!Array.isArray(leads)) {
+      console.error('⚠️ Leads data is not an array, resetting to empty array');
+      console.error('Leads type:', typeof leads, 'Value:', leads);
+      validLeads = [];
+    }
+    
     const newLead = {
       id: Date.now().toString(),
       userId,
@@ -1483,19 +1510,36 @@ app.post('/api/leads', authenticateToken, (req, res) => {
       savedAt: new Date().toISOString()
     };
     
-    leads.push(newLead);
-    
-    // Write leads to file - check if successful
-    const leadsWritten = writeLeads(leads);
-    if (!leadsWritten) {
-      console.error('Failed to write leads to file');
-      return res.status(500).json({
-        error: 'Failed to save lead',
-        message: 'Could not write to leads file. Please check file permissions.'
+    // Validate newLead has required fields
+    if (!newLead.id || !newLead.userId || !newLead.businessName) {
+      console.error('Invalid lead data:', newLead);
+      return res.status(400).json({
+        error: 'Invalid lead data',
+        message: 'Lead data validation failed'
       });
     }
     
+    console.log('➕ Adding new lead to array...');
+    validLeads.push(newLead);
+    console.log(`✅ Lead added. Total leads: ${validLeads.length}`);
+    
+    // Write leads to file - check if successful
+    console.log('💾 Writing leads to file...');
+    const leadsWritten = writeLeads(validLeads);
+    if (!leadsWritten) {
+      console.error('❌ Failed to write leads to file');
+      // Remove the lead from array since write failed
+      validLeads.pop();
+      return res.status(500).json({
+        error: 'Failed to save lead',
+        message: 'Could not write to leads file. Please check file permissions and disk space.',
+        details: `File path: ${LEADS_FILE}`
+      });
+    }
+    console.log('✅ Leads written to file successfully');
+    
     // Update analytics
+    console.log('📊 Updating analytics...');
     const analytics = readAnalytics();
     if (!analytics[userId]) {
       analytics[userId] = {
@@ -1509,16 +1553,28 @@ app.post('/api/leads', authenticateToken, (req, res) => {
     // Write analytics - check if successful (but don't fail the request if this fails)
     const analyticsWritten = writeAnalytics(analytics);
     if (!analyticsWritten) {
-      console.error('Failed to write analytics, but lead was saved successfully');
+      console.error('⚠️ Failed to write analytics, but lead was saved successfully');
       // Continue anyway since the lead was saved
+    } else {
+      console.log('✅ Analytics updated successfully');
     }
     
+    console.log('✅ Lead saved successfully:', newLead.id);
     res.status(201).json(newLead);
   } catch (error) {
-    console.error('Error saving lead:', error);
+    console.error('❌ Error saving lead:', error);
+    console.error('Error stack:', error.stack);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      name: error.name,
+      userId: req.user?.id,
+      businessName: req.body?.businessName
+    });
     res.status(500).json({
       error: 'Failed to save lead',
-      message: error.message
+      message: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 });

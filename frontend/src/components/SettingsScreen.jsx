@@ -47,7 +47,7 @@ export function SettingsScreen() {
     setSaving(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:4001/api/settings/profile', {
+      const response = await fetch(getApiUrl('api/settings/profile'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -127,7 +127,7 @@ export function SettingsScreen() {
     setSaving(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:4001/api/settings/profile', {
+      const response = await fetch(getApiUrl('api/settings/profile'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
