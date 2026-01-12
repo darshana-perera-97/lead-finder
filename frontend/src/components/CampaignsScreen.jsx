@@ -23,8 +23,12 @@ export function CampaignsScreen() {
 
   // Set up auto-refresh for live campaigns
   useEffect(() => {
-    // Check if there are any Live or Scheduled campaigns
-    const hasLiveCampaigns = campaigns.some(c => c.status === 'Live' || c.status === 'Scheduled');
+    // Check if campaigns is an array and has any Live or Scheduled campaigns
+    if (!Array.isArray(campaigns)) {
+      return;
+    }
+    
+    const hasLiveCampaigns = campaigns.some(c => c && (c.status === 'Live' || c.status === 'Scheduled'));
     
     if (!hasLiveCampaigns) {
       return; // Don't set up interval if no live campaigns
@@ -53,13 +57,17 @@ export function CampaignsScreen() {
 
       if (response.ok) {
         const data = await response.json();
-        setCampaigns(data);
+        // Ensure data is an array
+        const campaignsArray = Array.isArray(data) ? data : [];
+        setCampaigns(campaignsArray);
         if (!silent) {
           setCurrentPage(1); // Reset to first page when campaigns are loaded initially
         }
       } else {
         const errorData = await response.json();
         setError(errorData.error || 'Failed to load campaigns');
+        // Set empty array on error
+        setCampaigns([]);
       }
     } catch (error) {
       console.error('Error loading campaigns:', error);
@@ -320,12 +328,15 @@ export function CampaignsScreen() {
 
   // Pagination logic
   const paginatedCampaigns = useMemo(() => {
+    if (!Array.isArray(campaigns)) {
+      return [];
+    }
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return campaigns.slice(startIndex, endIndex);
   }, [campaigns, currentPage, itemsPerPage]);
 
-  const totalPages = Math.ceil(campaigns.length / itemsPerPage);
+  const totalPages = Math.ceil((Array.isArray(campaigns) ? campaigns.length : 0) / itemsPerPage);
 
   if (loading) {
     return (
@@ -359,7 +370,7 @@ export function CampaignsScreen() {
         </p>
       </div>
 
-      {campaigns.length === 0 ? (
+      {(!Array.isArray(campaigns) || campaigns.length === 0) ? (
         <div className="bg-white rounded-lg shadow-sm p-12 text-center">
           <p className="text-[#718096] mb-4">No campaigns yet. Select leads in "My Leads" and create your first campaign!</p>
         </div>
@@ -381,7 +392,7 @@ export function CampaignsScreen() {
                   </tr>
                 </thead>
                 <tbody>
-                  {paginatedCampaigns.map((campaign, index) => (
+                  {Array.isArray(paginatedCampaigns) && paginatedCampaigns.map((campaign, index) => (
                     <tr key={campaign.id} className={index % 2 === 0 ? 'bg-white' : 'bg-[#F5F7F9]/50'}>
                       <td className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-xs sm:text-sm text-[#2D3748] font-medium max-w-[120px] sm:max-w-none truncate sm:truncate-none">{campaign.name}</td>
                       <td className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4">
@@ -458,7 +469,7 @@ export function CampaignsScreen() {
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
-            totalItems={campaigns.length}
+            totalItems={Array.isArray(campaigns) ? campaigns.length : 0}
             itemsPerPage={itemsPerPage}
             onPageChange={setCurrentPage}
             onItemsPerPageChange={(value) => {

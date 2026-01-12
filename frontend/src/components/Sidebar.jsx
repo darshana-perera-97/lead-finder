@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Search, Database, Megaphone, Link, Settings, User, FileText, BarChart3, X } from 'lucide-react';
 import { getApiUrl } from '../config';
 
-export function Sidebar({ activeTab, onTabChange, user, isOpen = false, onClose }) {
+export function Sidebar({ user, isOpen = false, onClose }) {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [profileSettings, setProfileSettings] = useState(null);
 
   useEffect(() => {
@@ -72,12 +75,15 @@ export function Sidebar({ activeTab, onTabChange, user, isOpen = false, onClose 
       <nav className="flex-1 p-4">
         {menuItems.map((item) => {
           const Icon = item.icon;
-          const isActive = activeTab === item.id;
+          const isActive = location.pathname === `/dashboard/${item.id}`;
           
           return (
             <button
               key={item.id}
-              onClick={() => onTabChange(item.id)}
+              onClick={() => {
+                navigate(`/dashboard/${item.id}`);
+                onClose();
+              }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
                 isActive
                   ? 'bg-[#008080] text-white'

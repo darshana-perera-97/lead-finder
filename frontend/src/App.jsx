@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
 import { LandingPage } from './components/LandingPage';
@@ -24,15 +24,13 @@ function ProtectedRoute({ children, isAuthenticated }) {
 // Public Route Component (redirects to dashboard if authenticated)
 function PublicRoute({ children, isAuthenticated }) {
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/dashboard/lead-finder" replace />;
   }
   return children;
 }
 
 // Dashboard Component
 function Dashboard({ 
-  activeTab, 
-  setActiveTab, 
   user, 
   onLogout, 
   whatsappConnected, 
@@ -41,9 +39,23 @@ function Dashboard({
   backendDown,
   handleRetryConnection
 }) {
+  const location = useLocation();
+  
+  // Extract the current page from the pathname
+  const currentPage = location.pathname.replace('/dashboard/', '') || 'lead-finder';
+  
+  // Render the appropriate screen based on the current page
   const renderScreen = () => {
-    switch (activeTab) {
+    const validPages = ['lead-finder', 'my-leads', 'campaigns', 'templates', 'analytics', 'link-accounts', 'settings'];
+    
+    // If invalid page, redirect
+    if (currentPage && !validPages.includes(currentPage) && currentPage !== '') {
+      return <Navigate to="/dashboard/lead-finder" replace />;
+    }
+    
+    switch (currentPage) {
       case 'lead-finder':
+      case '':
         return <LeadFinderScreen user={user} />;
       case 'my-leads':
         return <MyLeadsScreen />;
@@ -74,11 +86,6 @@ function Dashboard({
           />
         )}
         <Sidebar 
-          activeTab={activeTab} 
-          onTabChange={(tab) => {
-            setActiveTab(tab);
-            setSidebarOpen(false);
-          }} 
           user={user}
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
@@ -99,26 +106,31 @@ function Dashboard({
   );
 }
 
+// Navigation handler component to listen for navigation events
+function NavigationHandler() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleNavigate = (event) => {
+      if (event.detail === 'campaigns') {
+        navigate('/dashboard/campaigns');
+      }
+    };
+    
+    window.addEventListener('navigateToCampaigns', handleNavigate);
+    return () => window.removeEventListener('navigateToCampaigns', handleNavigate);
+  }, [navigate]);
+
+  return null;
+}
+
 function App() {
-  const [activeTab, setActiveTab] = useState('lead-finder');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [whatsappConnected, setWhatsappConnected] = useState(false);
   const [backendDown, setBackendDown] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  // Listen for navigation events
-  useEffect(() => {
-    const handleNavigate = (event) => {
-      if (event.detail === 'campaigns') {
-        setActiveTab('campaigns');
-      }
-    };
-    
-    window.addEventListener('navigateToCampaigns', handleNavigate);
-    return () => window.removeEventListener('navigateToCampaigns', handleNavigate);
-  }, []);
 
   // Check if user is already logged in
   useEffect(() => {
@@ -298,6 +310,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <NavigationHandler />
       <Routes>
         {/* Public Route - Landing Page */}
         <Route 
@@ -309,14 +322,18 @@ function App() {
           } 
         />
         
-        {/* Protected Route - Dashboard */}
+        {/* Redirect /dashboard to /dashboard/lead-finder */}
         <Route 
           path="/dashboard" 
+          element={<Navigate to="/dashboard/lead-finder" replace />} 
+        />
+        
+        {/* Protected Route - Dashboard with nested routes */}
+        <Route 
+          path="/dashboard/*" 
           element={
             <ProtectedRoute isAuthenticated={isAuthenticated}>
               <Dashboard
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
                 user={user}
                 onLogout={handleLogout}
                 whatsappConnected={whatsappConnected}
@@ -334,7 +351,7 @@ function App() {
           path="*" 
           element={
             isAuthenticated ? (
-              <Navigate to="/dashboard" replace />
+              <Navigate to="/dashboard/lead-finder" replace />
             ) : (
               <Navigate to="/" replace />
             )

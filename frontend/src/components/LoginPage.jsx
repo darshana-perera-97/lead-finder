@@ -38,7 +38,7 @@ export function LoginPage({ onLogin }) {
       onLogin(data.user, data.token);
       
       // Navigate to dashboard after successful login
-      navigate('/dashboard');
+      navigate('/dashboard/lead-finder');
     } catch (err) {
       setError(err.message || 'An error occurred during login');
     } finally {

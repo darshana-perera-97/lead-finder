@@ -25,25 +25,31 @@ export function MyLeadsScreen() {
   // Build option lists from saved leads for quick selection
   const industryOptions = useMemo(() => {
     const set = new Set();
-    allLeads.forEach(lead => {
-      if (lead.industry) set.add(lead.industry);
-    });
+    if (Array.isArray(allLeads)) {
+      allLeads.forEach(lead => {
+        if (lead && lead.industry) set.add(lead.industry);
+      });
+    }
     return Array.from(set);
   }, [allLeads]);
 
   const cityOptions = useMemo(() => {
     const set = new Set();
-    allLeads.forEach(lead => {
-      if (lead.city) set.add(lead.city);
-    });
+    if (Array.isArray(allLeads)) {
+      allLeads.forEach(lead => {
+        if (lead && lead.city) set.add(lead.city);
+      });
+    }
     return Array.from(set);
   }, [allLeads]);
 
   const countryOptions = useMemo(() => {
     const set = new Set(['Sri Lanka']);
-    allLeads.forEach(lead => {
-      if (lead.country) set.add(lead.country);
-    });
+    if (Array.isArray(allLeads)) {
+      allLeads.forEach(lead => {
+        if (lead && lead.country) set.add(lead.country);
+      });
+    }
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [allLeads]);
 
@@ -62,11 +68,16 @@ export function MyLeadsScreen() {
 
         if (response.ok) {
           const data = await response.json();
-          setAllLeads(data); // Store all leads
-          setSavedLeads(data); // Initially show all leads
+          // Ensure data is an array
+          const leadsArray = Array.isArray(data) ? data : [];
+          setAllLeads(leadsArray); // Store all leads
+          setSavedLeads(leadsArray); // Initially show all leads
         } else {
           const errorData = await response.json();
           setError(errorData.error || 'Failed to load leads');
+          // Set empty arrays on error
+          setAllLeads([]);
+          setSavedLeads([]);
         }
       } catch (error) {
         console.error('Error loading leads:', error);
@@ -120,6 +131,10 @@ export function MyLeadsScreen() {
 
   // Filter leads based on search criteria
   const handleFilter = () => {
+    if (!Array.isArray(allLeads)) {
+      setSavedLeads([]);
+      return;
+    }
     let filtered = [...allLeads];
 
     // Filter by industry (case-insensitive partial match)
@@ -275,8 +290,8 @@ export function MyLeadsScreen() {
 
       if (response.ok) {
         // Remove lead from both allLeads and savedLeads
-        setAllLeads(prevLeads => prevLeads.filter(lead => lead.id !== leadId));
-        setSavedLeads(prevLeads => prevLeads.filter(lead => lead.id !== leadId));
+        setAllLeads(prevLeads => Array.isArray(prevLeads) ? prevLeads.filter(lead => lead.id !== leadId) : []);
+        setSavedLeads(prevLeads => Array.isArray(prevLeads) ? prevLeads.filter(lead => lead.id !== leadId) : []);
         // Remove from selected leads if it was selected
         setSelectedLeads(prev => prev.filter(id => id !== leadId));
       } else {
@@ -383,14 +398,14 @@ export function MyLeadsScreen() {
       ) : savedLeads.length === 0 ? (
         <div className="bg-white rounded-lg shadow-sm p-12 text-center">
           <p className="text-[#718096]">
-            {allLeads.length === 0 
+            {(!Array.isArray(allLeads) || allLeads.length === 0)
               ? 'No saved leads yet. Start searching and save leads to see them here!'
               : 'No leads match your filter criteria. Try adjusting your filters.'}
           </p>
         </div>
       ) : (
         <>
-          {allLeads.length !== savedLeads.length && (
+          {Array.isArray(allLeads) && allLeads.length !== savedLeads.length && (
             <div className="mb-4 text-sm text-[#718096]">
               Showing {savedLeads.length} of {allLeads.length} leads
             </div>

@@ -119,11 +119,15 @@ export function TemplatesScreen() {
 
       if (response.ok) {
         const data = await response.json();
-        setTemplates(data);
+        // Ensure data is an array
+        const templatesArray = Array.isArray(data) ? data : [];
+        setTemplates(templatesArray);
         setCurrentPage(1); // Reset to first page when templates are loaded
       } else {
         const errorData = await response.json();
         setError(errorData.error || 'Failed to load templates');
+        // Set empty array on error
+        setTemplates([]);
       }
     } catch (error) {
       console.error('Error loading templates:', error);
@@ -135,12 +139,15 @@ export function TemplatesScreen() {
 
   // Pagination logic
   const paginatedTemplates = useMemo(() => {
+    if (!Array.isArray(templates)) {
+      return [];
+    }
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return templates.slice(startIndex, endIndex);
   }, [templates, currentPage, itemsPerPage]);
 
-  const totalPages = Math.ceil(templates.length / itemsPerPage);
+  const totalPages = Math.ceil((Array.isArray(templates) ? templates.length : 0) / itemsPerPage);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -688,14 +695,14 @@ export function TemplatesScreen() {
         <div>
           <h2 className="text-xl font-semibold text-[#2D3748]">Templates</h2>
           <p className="text-sm text-[#718096] mt-1">
-            {templates.length} of 15 templates used
+            {Array.isArray(templates) ? templates.length : 0} of 15 templates used
           </p>
         </div>
         <button
           onClick={handleNewTemplate}
-          disabled={templates.length >= 15}
+          disabled={Array.isArray(templates) && templates.length >= 15}
           className="w-full sm:w-auto bg-[#008080] text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-[#006666] transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
-          title={templates.length >= 15 ? 'Template limit reached. Delete a template to create a new one.' : ''}
+          title={Array.isArray(templates) && templates.length >= 15 ? 'Template limit reached. Delete a template to create a new one.' : ''}
         >
           <Plus className="w-4 h-4" />
           New Template
@@ -713,7 +720,7 @@ export function TemplatesScreen() {
             <p className="text-red-600">{error}</p>
           </div>
         </div>
-      ) : templates.length === 0 ? (
+      ) : (!Array.isArray(templates) || templates.length === 0) ? (
         <div className="bg-white rounded-lg shadow-sm p-12 text-center">
           <p className="text-[#718096] mb-4">No templates yet. Create your first template to get started!</p>
           <p className="text-xs text-[#718096] mb-4">You can create up to 15 templates</p>
@@ -727,7 +734,7 @@ export function TemplatesScreen() {
       ) : (
         <>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-          {paginatedTemplates.map((template) => (
+          {Array.isArray(paginatedTemplates) && paginatedTemplates.map((template) => (
             <div key={template.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 flex flex-col h-full">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-2">
@@ -806,7 +813,7 @@ export function TemplatesScreen() {
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}
-          totalItems={templates.length}
+          totalItems={Array.isArray(templates) ? templates.length : 0}
           itemsPerPage={itemsPerPage}
           onPageChange={setCurrentPage}
           onItemsPerPageChange={(value) => {
