@@ -11,6 +11,7 @@ const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
 const nodemailer = require('nodemailer');
+const { exec } = require('child_process');
 const app = express();
 const PORT = process.env.PORT || 4001;
 
@@ -567,13 +568,21 @@ let whatsappClient = null;
 let whatsappQRCode = null;
 let whatsappReady = false;
 let whatsappQRCallback = null;
+let whatsappInitializing = false; // Flag to prevent multiple simultaneous initializations
 
 // Initialize WhatsApp Client
 const initializeWhatsApp = () => {
   if (whatsappClient) {
     return whatsappClient;
   }
-
+  
+  // Prevent multiple simultaneous initializations
+  if (whatsappInitializing) {
+    console.log('⏳ WhatsApp initialization already in progress, skipping...');
+    return whatsappClient;
+  }
+  
+  whatsappInitializing = true;
   console.log('🔧 Initializing WhatsApp Web Client...');
 
   whatsappClient = new Client({
@@ -677,6 +686,7 @@ const initializeWhatsApp = () => {
     whatsappReady = false;
     whatsappQRCode = null;
     whatsappClient = null;
+    whatsappInitializing = false;
     // Reinitialize after 5 seconds
     setTimeout(() => {
       console.log('🔄 Reinitializing WhatsApp Client...');
@@ -694,6 +704,7 @@ const initializeWhatsApp = () => {
     whatsappClient.initialize()
       .then(() => {
         console.log('✅ WhatsApp client initialization started');
+        whatsappInitializing = false;
       })
       .catch(err => {
         const errorMessage = err.message || err.toString() || '';
@@ -714,35 +725,85 @@ const initializeWhatsApp = () => {
           console.error('🔧 Attempting to clean up and retry...');
           console.error('');
           
-          // Try to clean up the lock file
-          try {
-            const lockFilePath = path.join('./.wwebjs_auth/session-leadflow-whatsapp', 'Default', 'SingletonLock');
-            const lockFileDir = path.join('./.wwebjs_auth/session-leadflow-whatsapp', 'Default');
-            
-            if (fs.existsSync(lockFilePath)) {
-              fs.unlinkSync(lockFilePath);
-              console.log('✅ Removed lock file');
-            }
-            
-            // Also try to remove Last Browser file
-            const lastBrowserPath = path.join('./.wwebjs_auth/session-leadflow-whatsapp', 'Last Browser');
-            if (fs.existsSync(lastBrowserPath)) {
-              fs.unlinkSync(lastBrowserPath);
-              console.log('✅ Removed Last Browser file');
-            }
-          } catch (cleanupError) {
-            console.error('⚠️  Could not clean up lock files:', cleanupError.message);
-          }
+          // Kill any running Chrome/Chromium processes that might be using the session
+          const killBrowserProcesses = () => {
+            return new Promise((resolve) => {
+              // Find and kill Chrome/Chromium processes
+              const command = process.platform === 'win32' 
+                ? 'taskkill /F /IM chrome.exe /IM chromium.exe /IM chrome-win32\\chrome.exe 2>nul || echo "No processes found"'
+                : 'pkill -f "chrome.*session-leadflow-whatsapp" || pkill -f "chromium.*session-leadflow-whatsapp" || echo "No processes found"';
+              
+              exec(command, (error, stdout, stderr) => {
+                if (stdout && !stdout.includes('No processes found')) {
+                  console.log('✅ Killed running browser processes');
+                }
+                resolve();
+              });
+            });
+          };
           
-          // Reset client and retry after a delay
-          if (retries > 0) {
-            console.log(`🔄 Retrying initialization after cleanup... (${retries} attempts left)`);
+          // Clean up lock files
+          const cleanupLockFiles = () => {
+            try {
+              const sessionDir = path.join('./.wwebjs_auth/session-leadflow-whatsapp');
+              const lockFilePath = path.join(sessionDir, 'Default', 'SingletonLock');
+              const lastBrowserPath = path.join(sessionDir, 'Last Browser');
+              
+              // Remove lock file
+              if (fs.existsSync(lockFilePath)) {
+                fs.unlinkSync(lockFilePath);
+                console.log('✅ Removed SingletonLock file');
+              }
+              
+              // Remove Last Browser file
+              if (fs.existsSync(lastBrowserPath)) {
+                fs.unlinkSync(lastBrowserPath);
+                console.log('✅ Removed Last Browser file');
+              }
+              
+              // Also try to remove the entire Default directory if it exists and is empty
+              const defaultDir = path.join(sessionDir, 'Default');
+              if (fs.existsSync(defaultDir)) {
+                try {
+                  const files = fs.readdirSync(defaultDir);
+                  if (files.length === 0) {
+                    fs.rmdirSync(defaultDir);
+                    console.log('✅ Removed empty Default directory');
+                  }
+                } catch (e) {
+                  // Directory not empty or can't be removed, that's okay
+                }
+              }
+            } catch (cleanupError) {
+              console.error('⚠️  Could not clean up lock files:', cleanupError.message);
+            }
+          };
+          
+          // Perform cleanup
+          killBrowserProcesses().then(() => {
+            // Wait a bit for processes to fully terminate
             setTimeout(() => {
-              whatsappClient = null;
-              initializeWhatsApp();
-            }, 3000);
-            return;
-          }
+              cleanupLockFiles();
+              
+              // Reset client and retry after a longer delay
+              if (retries > 0) {
+                console.log(`🔄 Retrying initialization after cleanup... (${retries} attempts left)`);
+                setTimeout(() => {
+                  whatsappClient = null;
+                  whatsappInitializing = false;
+                  initializeWhatsApp();
+                }, 5000); // Increased delay to 5 seconds
+              } else {
+                console.error('❌ Failed to initialize WhatsApp client - browser session locked');
+                console.error('💡 Manual fix: Stop all browser processes and delete .wwebjs_auth folder, then restart server');
+                console.error('   Or run: pkill -f chrome && rm -rf .wwebjs_auth && pm2 restart index');
+                whatsappClient = null;
+                whatsappInitializing = false;
+              }
+            }, 2000);
+          });
+          
+          return; // Exit early to prevent other error handling
         }
         
         // Check for missing system dependencies (Linux) - check multiple error formats
@@ -782,6 +843,7 @@ const initializeWhatsApp = () => {
           console.log(`🔄 Retrying initialization... (${retries} attempts left)`);
           setTimeout(() => {
             whatsappClient = null;
+            whatsappInitializing = false;
             initializeWhatsApp();
           }, 5000);
         } else if (!isDependencyError && !isBrowserRunningError) {
@@ -792,10 +854,12 @@ const initializeWhatsApp = () => {
           console.error('   3. Check if antivirus is blocking browser launch');
           console.error('   4. WhatsApp Web will work when QR code endpoint is called');
           whatsappClient = null;
+          whatsappInitializing = false;
         } else if (isBrowserRunningError && retries === 0) {
           console.error('❌ Failed to initialize WhatsApp client - browser session locked');
           console.error('💡 Manual fix: Stop all browser processes and delete .wwebjs_auth folder, then restart server');
           whatsappClient = null;
+          whatsappInitializing = false;
         }
       });
   };
