@@ -701,6 +701,50 @@ const initializeWhatsApp = () => {
         
         console.error('❌ Error initializing WhatsApp client:', errorMessage);
         
+        // Check for "browser is already running" error
+        const isBrowserRunningError = 
+          errorMessage.includes('browser is already running') ||
+          errorMessage.includes('userDataDir') ||
+          errorString.includes('browser is already running');
+        
+        if (isBrowserRunningError) {
+          console.error('');
+          console.error('⚠️  Browser session lock detected');
+          console.error('💡 This usually happens when the server was restarted but the browser process is still running.');
+          console.error('🔧 Attempting to clean up and retry...');
+          console.error('');
+          
+          // Try to clean up the lock file
+          try {
+            const lockFilePath = path.join('./.wwebjs_auth/session-leadflow-whatsapp', 'Default', 'SingletonLock');
+            const lockFileDir = path.join('./.wwebjs_auth/session-leadflow-whatsapp', 'Default');
+            
+            if (fs.existsSync(lockFilePath)) {
+              fs.unlinkSync(lockFilePath);
+              console.log('✅ Removed lock file');
+            }
+            
+            // Also try to remove Last Browser file
+            const lastBrowserPath = path.join('./.wwebjs_auth/session-leadflow-whatsapp', 'Last Browser');
+            if (fs.existsSync(lastBrowserPath)) {
+              fs.unlinkSync(lastBrowserPath);
+              console.log('✅ Removed Last Browser file');
+            }
+          } catch (cleanupError) {
+            console.error('⚠️  Could not clean up lock files:', cleanupError.message);
+          }
+          
+          // Reset client and retry after a delay
+          if (retries > 0) {
+            console.log(`🔄 Retrying initialization after cleanup... (${retries} attempts left)`);
+            setTimeout(() => {
+              whatsappClient = null;
+              initializeWhatsApp();
+            }, 3000);
+            return;
+          }
+        }
+        
         // Check for missing system dependencies (Linux) - check multiple error formats
         const isDependencyError = 
           errorMessage.includes('libatk') || 
@@ -733,24 +777,24 @@ const initializeWhatsApp = () => {
           console.error('');
         }
         
-        if (retries > 0 && !isDependencyError) {
-          // Only retry if it's not a dependency error
+        if (retries > 0 && !isDependencyError && !isBrowserRunningError) {
+          // Only retry if it's not a dependency error or browser running error
           console.log(`🔄 Retrying initialization... (${retries} attempts left)`);
           setTimeout(() => {
             whatsappClient = null;
             initializeWhatsApp();
           }, 5000);
-        } else {
+        } else if (!isDependencyError && !isBrowserRunningError) {
           console.error('❌ Failed to initialize WhatsApp client after multiple attempts');
-          if (!isDependencyError) {
-            console.error('💡 Troubleshooting tips:');
-            console.error('   1. Make sure Chrome/Chromium is installed');
-            console.error('   2. Try running: npm install puppeteer');
-            console.error('   3. Check if antivirus is blocking browser launch');
-            console.error('   4. WhatsApp Web will work when QR code endpoint is called');
-          }
-          // Don't set to null if it's a dependency error - keep the client object but mark as failed
-          // This way the API can return a helpful error message
+          console.error('💡 Troubleshooting tips:');
+          console.error('   1. Make sure Chrome/Chromium is installed');
+          console.error('   2. Try running: npm install puppeteer');
+          console.error('   3. Check if antivirus is blocking browser launch');
+          console.error('   4. WhatsApp Web will work when QR code endpoint is called');
+          whatsappClient = null;
+        } else if (isBrowserRunningError && retries === 0) {
+          console.error('❌ Failed to initialize WhatsApp client - browser session locked');
+          console.error('💡 Manual fix: Stop all browser processes and delete .wwebjs_auth folder, then restart server');
           whatsappClient = null;
         }
       });
