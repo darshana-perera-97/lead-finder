@@ -27,8 +27,7 @@ const CAMPAIGNS_FILE = path.join(DATA_DIR, 'campaigns.json');
 const SMTP_CONFIGS_FILE = path.join(DATA_DIR, 'smtp_configs.json');
 
 // Frontend build directory path
-const FRONTEND_BUILD_DIR = '../frontend/dist';
-// const FRONTEND_BUILD_DIR = path.join(__dirname, '..', 'frontend', 'dist');
+const FRONTEND_BUILD_DIR = path.join(__dirname, '..', 'frontend', 'dist');
 
 // Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
@@ -4171,7 +4170,7 @@ app.get('*', (req, res) => {
   
   const indexPath = path.join(FRONTEND_BUILD_DIR, 'index.html');
   if (fs.existsSync(indexPath)) {
-    res.sendFile(indexPath);
+    res.sendFile(path.resolve(indexPath));
   } else {
     res.status(404).json({ error: 'Frontend not built. Please build the frontend first.' });
   }
