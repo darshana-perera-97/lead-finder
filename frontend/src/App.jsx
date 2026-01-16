@@ -11,6 +11,8 @@ import { AnalyticsScreen } from './components/AnalyticsScreen';
 import { LinkAccountsScreen } from './components/LinkAccountsScreen';
 import { SettingsScreen } from './components/SettingsScreen';
 import { BackendErrorOverlay } from './components/BackendErrorOverlay';
+import { AdminLoginPage } from './components/AdminLoginPage';
+import { AdminPanel } from './components/AdminPanel';
 import { getApiUrl } from './config';
 
 // Protected Route Component
@@ -322,6 +324,30 @@ function App() {
           } 
         />
         
+        {/* Admin Login Route */}
+        <Route 
+          path="/admin/login" 
+          element={
+            !isAuthenticated || user?.role !== 'admin' ? (
+              <AdminLoginPage onLogin={handleLogin} />
+            ) : (
+              <Navigate to="/admin/dashboard" replace />
+            )
+          } 
+        />
+        
+        {/* Admin Panel Route */}
+        <Route 
+          path="/admin/dashboard" 
+          element={
+            isAuthenticated && user?.role === 'admin' ? (
+              <AdminPanel user={user} onLogout={handleLogout} />
+            ) : (
+              <Navigate to="/admin/login" replace />
+            )
+          } 
+        />
+        
         {/* Redirect /dashboard to /dashboard/lead-finder */}
         <Route 
           path="/dashboard" 
@@ -351,7 +377,11 @@ function App() {
           path="*" 
           element={
             isAuthenticated ? (
-              <Navigate to="/dashboard/lead-finder" replace />
+              user?.role === 'admin' ? (
+                <Navigate to="/admin/dashboard" replace />
+              ) : (
+                <Navigate to="/dashboard/lead-finder" replace />
+              )
             ) : (
               <Navigate to="/" replace />
             )

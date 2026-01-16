@@ -569,6 +569,7 @@ let whatsappQRCode = null;
 let whatsappReady = false;
 let whatsappQRCallback = null;
 let whatsappInitializing = false; // Flag to prevent multiple simultaneous initializations
+let loadingTimeout = null; // Timeout for loading screen stuck at 99%
 
 // Initialize WhatsApp Client
 const initializeWhatsApp = () => {
@@ -667,6 +668,13 @@ const initializeWhatsApp = () => {
     console.log('✅ WhatsApp Client is ready!');
     whatsappReady = true;
     whatsappQRCode = null; // Clear QR code when ready
+    whatsappInitializing = false;
+    
+    // Clear loading timeout if it exists
+    if (loadingTimeout) {
+      clearTimeout(loadingTimeout);
+      loadingTimeout = null;
+    }
   });
 
   // Authentication event
@@ -695,16 +703,68 @@ const initializeWhatsApp = () => {
   });
 
   // Loading screen event
+  let lastLoadingPercent = 0;
   whatsappClient.on('loading_screen', (percent, message) => {
     console.log(`⏳ Loading WhatsApp: ${percent}% - ${message}`);
+    lastLoadingPercent = percent;
+    
+    // Clear existing timeout
+    if (loadingTimeout) {
+      clearTimeout(loadingTimeout);
+      loadingTimeout = null;
+    }
+    
+    // If stuck at 99% for more than 30 seconds, try to recover
+    if (percent >= 99) {
+      loadingTimeout = setTimeout(() => {
+        console.log('⚠️ WhatsApp loading stuck at 99%, checking connection status...');
+        // Check if client is actually ready even though ready event didn't fire
+        try {
+          if (whatsappClient && whatsappClient.info && whatsappClient.info.wid) {
+            console.log('✅ WhatsApp client is actually ready (has info), updating status...');
+            whatsappReady = true;
+            whatsappQRCode = null;
+            whatsappInitializing = false;
+            loadingTimeout = null;
+          } else {
+            console.log('⚠️ WhatsApp still loading, waiting a bit more...');
+          }
+        } catch (error) {
+          console.error('Error checking WhatsApp status:', error);
+        }
+      }, 30000); // 30 seconds timeout
+    }
   });
 
   // Initialize the client with retry logic
   const initializeWithRetry = (retries = 3) => {
+    // Set a global timeout for the entire initialization process (2 minutes)
+    const globalTimeout = setTimeout(() => {
+      if (!whatsappReady && whatsappClient) {
+        console.log('⚠️ WhatsApp initialization taking too long, checking if client is ready anyway...');
+        try {
+          if (whatsappClient.info && whatsappClient.info.wid) {
+            console.log('✅ WhatsApp client is ready (has info), updating status...');
+            whatsappReady = true;
+            whatsappQRCode = null;
+            whatsappInitializing = false;
+          } else {
+            console.log('⚠️ WhatsApp client not ready yet, but continuing to wait...');
+          }
+        } catch (error) {
+          console.error('Error checking WhatsApp status during timeout:', error);
+        }
+      }
+    }, 120000); // 2 minutes
+    
     whatsappClient.initialize()
       .then(() => {
         console.log('✅ WhatsApp client initialization started');
-        whatsappInitializing = false;
+        // Don't set whatsappInitializing to false here - wait for ready event
+        // Clear timeout when ready event fires
+        whatsappClient.once('ready', () => {
+          clearTimeout(globalTimeout);
+        });
       })
       .catch(err => {
         const errorMessage = err.message || err.toString() || '';
@@ -906,6 +966,79 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
+// Middleware to verify admin role
+const authenticateAdmin = (req, res, next) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  next();
+};
+
+// Helper function to check package limits
+const checkPackageLimits = (userId) => {
+  const settings = readProfileSettings();
+  const userSettings = settings[userId] || {};
+  const packageType = userSettings.package || 'basic';
+  const searchCount = userSettings.searchCount || 0;
+  const lastSearchReset = userSettings.lastSearchReset || new Date().toISOString();
+  
+  // Package limits
+  const limits = {
+    basic: { maxSearches: 5, period: 'lifetime' },
+    pro: { maxSearches: 50, period: 'monthly' },
+    lifetime: { maxSearches: Infinity, period: 'lifetime' }
+  };
+  
+  const limit = limits[packageType] || limits.basic;
+  
+  // Check if monthly reset is needed for Pro plan
+  if (limit.period === 'monthly') {
+    const lastReset = new Date(lastSearchReset);
+    const now = new Date();
+    const daysSinceReset = Math.floor((now - lastReset) / (1000 * 60 * 60 * 24));
+    
+    if (daysSinceReset >= 30) {
+      // Reset monthly count
+      userSettings.searchCount = 0;
+      userSettings.lastSearchReset = new Date().toISOString();
+      settings[userId] = userSettings;
+      writeProfileSettings(settings);
+      return { allowed: true, remaining: limit.maxSearches, limit: limit.maxSearches };
+    }
+  }
+  
+  // Check if user has exceeded limit
+  if (limit.period === 'lifetime' && packageType === 'basic') {
+    if (searchCount >= limit.maxSearches) {
+      return { allowed: false, remaining: 0, limit: limit.maxSearches, message: 'Basic plan limit reached (5 lifetime searches)' };
+    }
+    return { allowed: true, remaining: limit.maxSearches - searchCount, limit: limit.maxSearches };
+  }
+  
+  if (limit.period === 'monthly' && packageType === 'pro') {
+    if (searchCount >= limit.maxSearches) {
+      return { allowed: false, remaining: 0, limit: limit.maxSearches, message: 'Pro plan monthly limit reached (50 searches/month)' };
+    }
+    return { allowed: true, remaining: limit.maxSearches - searchCount, limit: limit.maxSearches };
+  }
+  
+  // Lifetime plan - unlimited
+  return { allowed: true, remaining: Infinity, limit: Infinity };
+};
+
+// Helper function to increment search count
+const incrementSearchCount = (userId) => {
+  const settings = readProfileSettings();
+  if (!settings[userId]) {
+    settings[userId] = { searchCount: 0 };
+  }
+  settings[userId].searchCount = (settings[userId].searchCount || 0) + 1;
+  if (!settings[userId].lastSearchReset) {
+    settings[userId].lastSearchReset = new Date().toISOString();
+  }
+  writeProfileSettings(settings);
+};
+
 // Root route is handled by static middleware and catch-all route below
 
 // Health check route
@@ -942,6 +1075,21 @@ app.post('/api/auth/register', async (req, res) => {
     };
 
     users.push(newUser);
+
+    // Initialize profile settings with default basic package
+    const settings = readProfileSettings();
+    settings[newUser.id] = {
+      fullName: newUser.name,
+      email: newUser.email,
+      package: 'basic',
+      searchCount: 0,
+      lastSearchReset: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      emailNotifications: true,
+      campaignUpdates: true,
+      weeklyReports: false
+    };
+    writeProfileSettings(settings);
 
     // Generate JWT token
     const token = jwt.sign(
@@ -1065,14 +1213,18 @@ app.post('/api/settings/profile', authenticateToken, (req, res) => {
     // Read existing settings
     const settings = readProfileSettings();
     
+    // Preserve package and search count if they exist
+    const existingSettings = settings[userId] || {};
+    
     // Update user settings
     settings[userId] = {
-      fullName: fullName || 'John Doe',
+      ...existingSettings,
+      fullName: fullName || existingSettings.fullName || 'John Doe',
       email: email || req.user.email,
-      company: company || 'LeadFlow Inc',
-      emailNotifications: emailNotifications !== undefined ? emailNotifications : true,
-      campaignUpdates: campaignUpdates !== undefined ? campaignUpdates : true,
-      weeklyReports: weeklyReports !== undefined ? weeklyReports : false,
+      company: company || existingSettings.company || 'LeadFlow Inc',
+      emailNotifications: emailNotifications !== undefined ? emailNotifications : (existingSettings.emailNotifications !== undefined ? existingSettings.emailNotifications : true),
+      campaignUpdates: campaignUpdates !== undefined ? campaignUpdates : (existingSettings.campaignUpdates !== undefined ? existingSettings.campaignUpdates : true),
+      weeklyReports: weeklyReports !== undefined ? weeklyReports : (existingSettings.weeklyReports !== undefined ? existingSettings.weeklyReports : false),
       updatedAt: new Date().toISOString()
     };
     
@@ -1463,11 +1615,40 @@ const getCountryCode = (countryName) => {
 app.post('/api/search', authenticateToken, async (req, res) => {
   console.log('Received search request:', req.body);
   try {
-    const { industry, city, country } = req.body;
+    const { industry, city, country, page, q } = req.body;
     const userId = req.user.id;
     
-    if (!industry && !city) {
-      return res.status(400).json({ error: 'At least industry/keyword or city is required' });
+    // Support both old format (industry, city, country) and new format (q, page)
+    let query;
+    if (q) {
+      // New format: direct query string
+      query = q;
+    } else {
+      // Old format: build query from form fields
+      if (!industry && !city) {
+        return res.status(400).json({ error: 'At least industry/keyword or city is required, or provide "q" parameter' });
+      }
+      
+      let queryParts = [];
+      if (industry) queryParts.push(industry);
+      if (city) queryParts.push(city);
+      if (country && country !== 'Sri Lanka') {
+        queryParts.push(country);
+      }
+      query = queryParts.join(' ');
+    }
+
+    // Get page number (default to 1 if not provided)
+    const pageNumber = page || 1;
+
+    // Check package limits before allowing search
+    const limitCheck = checkPackageLimits(userId);
+    if (!limitCheck.allowed) {
+      return res.status(403).json({ 
+        error: limitCheck.message || 'Search limit exceeded',
+        limit: limitCheck.limit,
+        remaining: limitCheck.remaining
+      });
     }
 
     // Track search in analytics
@@ -1482,36 +1663,136 @@ app.post('/api/search', authenticateToken, async (req, res) => {
     analytics[userId].searches = (analytics[userId].searches || 0) + 1;
     writeAnalytics(analytics);
 
-    // Build query string from form fields
-    let queryParts = [];
-    if (industry) queryParts.push(industry);
-    if (city) queryParts.push(city);
-    if (country && country !== 'Sri Lanka') {
-      queryParts.push(country);
-    }
-    const query = queryParts.join(' ');
+    // Increment user's search count
+    incrementSearchCount(userId);
 
     // Get country code for gl parameter
     const countryCode = getCountryCode(country || 'Sri Lanka');
 
-    let data = JSON.stringify({
-      "q": query,
-      "gl": countryCode
+    // Loop through pages 1 to 3 and combine all results
+    let allPlaces = [];
+    const seenIds = new Set();
+    const pagesToFetch = [1, 2, 3];
+    
+    console.log(`🔍 Fetching pages 1-3 for query: "${query}"`);
+    
+    // Make requests for all pages in parallel
+    const pageRequests = pagesToFetch.map(pageNum => {
+      const data = JSON.stringify({
+        "q": query,
+        "gl": countryCode,
+        "num": 50,
+        "page": pageNum
+      });
+
+      console.log(`🔍 Serper API request payload for page ${pageNum}:`, data);
+
+      return axios.request({
+        method: 'post',
+        maxBodyLength: Infinity,
+        url: 'https://google.serper.dev/places',
+        headers: { 
+          'X-API-KEY': process.env.SERPER_API_KEY, 
+          'Content-Type': 'application/json'
+        },
+        data: data
+      }).then(response => {
+        const places = response.data?.places || [];
+        console.log(`📊 Serper API returned ${places.length} places for page ${pageNum}`);
+        return { page: pageNum, places, response: response.data };
+      }).catch(err => {
+        console.log(`⚠️ Request failed for page ${pageNum}:`, err.message);
+        return { page: pageNum, places: [], response: null };
+      });
     });
-
-    let config = {
-      method: 'post',
-      maxBodyLength: Infinity,
-      url: 'https://google.serper.dev/places',
-      headers: { 
-        'X-API-KEY': process.env.SERPER_API_KEY, 
-        'Content-Type': 'application/json'
-      },
-      data: data
+    
+    // Wait for all requests to complete
+    const pageResponses = await Promise.all(pageRequests);
+    
+    // Combine all results, avoiding duplicates
+    let firstResponse = null;
+    pageResponses.forEach(({ page, places, response }) => {
+      if (response && !firstResponse) {
+        firstResponse = response; // Keep first response metadata
+      }
+      
+      places.forEach(place => {
+        const id = place.placeId || place.cid || place.title || place.phoneNumber;
+        if (id && !seenIds.has(String(id)) && place.title && place.title !== 'N/A') {
+          allPlaces.push(place);
+          seenIds.add(String(id));
+        }
+      });
+    });
+    
+    const totalPlaces = allPlaces.length;
+    console.log(`✅ Total unique places from pages 1-3: ${totalPlaces}`);
+    
+    // If we got less than expected and it's the first page, try making additional requests with location variations
+    // This helps get more diverse results (only when using old format)
+    if (totalPlaces < 50 && !q && city) {
+      console.log(`⚠️ Only ${totalPlaces} results, attempting to fetch more with location variations...`);
+      
+      // Try additional queries with location-specific variations
+      const locationQueries = [];
+      locationQueries.push(`${industry || ''} ${city} downtown`.trim());
+      locationQueries.push(`${industry || ''} ${city} area`.trim());
+      
+      // Make additional requests in parallel
+      const additionalRequests = locationQueries.slice(0, 2).map(locQuery => {
+        const additionalData = JSON.stringify({
+          "q": locQuery,
+          "gl": countryCode,
+          "num": 25
+        });
+        
+        return axios.request({
+          method: 'post',
+          maxBodyLength: Infinity,
+          url: 'https://google.serper.dev/places',
+          headers: { 
+            'X-API-KEY': process.env.SERPER_API_KEY, 
+            'Content-Type': 'application/json'
+          },
+          data: additionalData
+        }).catch(err => {
+          console.log('⚠️ Additional request failed:', err.message);
+          return { data: { places: [] } };
+        });
+      });
+      
+      if (additionalRequests.length > 0) {
+        try {
+          const additionalResponses = await Promise.all(additionalRequests);
+          
+          // Add unique places from additional requests
+          additionalResponses.forEach((resp, idx) => {
+            const additionalPlaces = resp.data?.places || [];
+            console.log(`📊 Additional request ${idx + 1} returned ${additionalPlaces.length} places`);
+            
+            additionalPlaces.forEach(place => {
+              const id = place.placeId || place.cid || place.title || place.phoneNumber;
+              if (id && !seenIds.has(String(id)) && place.title && place.title !== 'N/A') {
+                allPlaces.push(place);
+                seenIds.add(String(id));
+              }
+            });
+          });
+          
+          console.log(`✅ Total unique places after combining: ${allPlaces.length}`);
+        } catch (error) {
+          console.log('⚠️ Error making additional requests:', error.message);
+        }
+      }
+    }
+    
+    // Update response data with combined results
+    const finalResponse = {
+      ...(firstResponse || {}),
+      places: allPlaces
     };
-
-    const response = await axios.request(config);
-    res.json(response.data);
+    
+    res.json(finalResponse);
   } catch (error) {
     console.error('Search error:', error);
     res.status(500).json({ 
@@ -3299,6 +3580,255 @@ app.use((req, res) => {
     path: req.path,
     availableRoutes: ['GET /', 'GET /health', 'POST /api/search']
   });
+});
+
+// Admin Routes
+// Get admin analytics
+app.get('/api/admin/analytics', authenticateToken, authenticateAdmin, (req, res) => {
+  try {
+    const analytics = readAnalytics();
+    const leads = readLeads();
+    const campaigns = readCampaigns();
+    const settings = readProfileSettings();
+    
+    // Calculate total users
+    const totalUsers = users.length;
+    
+    // Calculate total searches across all users
+    let totalSearches = 0;
+    Object.values(analytics).forEach(userAnalytics => {
+      totalSearches += userAnalytics.searches || 0;
+    });
+    
+    // Calculate total saved leads
+    const totalSavedLeads = leads.length;
+    
+    // Calculate total campaigns
+    const totalCampaigns = campaigns.length;
+    
+    // Package distribution
+    const packageDistribution = {
+      basic: 0,
+      pro: 0,
+      lifetime: 0
+    };
+    
+    Object.values(settings).forEach(userSetting => {
+      const packageType = userSetting.package || 'basic';
+      if (packageDistribution.hasOwnProperty(packageType)) {
+        packageDistribution[packageType]++;
+      } else {
+        packageDistribution.basic++;
+      }
+    });
+    
+    // Users with search counts
+    const usersWithSearches = users.map(user => {
+      const userSettings = settings[user.id] || {};
+      const userAnalytics = analytics[user.id] || { searches: 0, savedLeads: 0, followups: 0 };
+      return {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        package: userSettings.package || 'basic',
+        searchCount: userSettings.searchCount || 0,
+        totalSearches: userAnalytics.searches || 0,
+        savedLeads: userAnalytics.savedLeads || 0,
+        createdAt: userSettings.createdAt || null
+      };
+    });
+    
+    res.json({
+      totalUsers,
+      totalSearches,
+      totalSavedLeads,
+      totalCampaigns,
+      packageDistribution,
+      users: usersWithSearches
+    });
+  } catch (error) {
+    console.error('Error getting admin analytics:', error);
+    res.status(500).json({
+      error: 'Failed to get admin analytics',
+      message: error.message
+    });
+  }
+});
+
+// Get all users (admin only)
+app.get('/api/admin/users', authenticateToken, authenticateAdmin, (req, res) => {
+  try {
+    const settings = readProfileSettings();
+    const analytics = readAnalytics();
+    
+    const usersList = users.map(user => {
+      const userSettings = settings[user.id] || {};
+      const userAnalytics = analytics[user.id] || { searches: 0, savedLeads: 0, followups: 0 };
+      return {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        package: userSettings.package || 'basic',
+        searchCount: userSettings.searchCount || 0,
+        lastSearchReset: userSettings.lastSearchReset || null,
+        totalSearches: userAnalytics.searches || 0,
+        savedLeads: userAnalytics.savedLeads || 0,
+        fullName: userSettings.fullName || user.name,
+        company: userSettings.company || null,
+        createdAt: userSettings.createdAt || null
+      };
+    });
+    
+    res.json(usersList);
+  } catch (error) {
+    console.error('Error getting users:', error);
+    res.status(500).json({
+      error: 'Failed to get users',
+      message: error.message
+    });
+  }
+});
+
+// Create new user (admin only)
+app.post('/api/admin/users', authenticateToken, authenticateAdmin, async (req, res) => {
+  try {
+    const { email, password, name, package: packageType } = req.body;
+    
+    if (!email || !password || !name) {
+      return res.status(400).json({ error: 'Email, password, and name are required' });
+    }
+    
+    // Check if user already exists
+    const existingUser = users.find(u => u.email === email);
+    if (existingUser) {
+      return res.status(400).json({ error: 'User already exists' });
+    }
+    
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    // Create new user
+    const newUser = {
+      id: users.length + 1,
+      email,
+      password: hashedPassword,
+      name,
+      role: 'user'
+    };
+    
+    users.push(newUser);
+    
+    // Initialize profile settings with package
+    const settings = readProfileSettings();
+    settings[newUser.id] = {
+      fullName: name,
+      email: email,
+      package: packageType || 'basic',
+      searchCount: 0,
+      lastSearchReset: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      emailNotifications: true,
+      campaignUpdates: true,
+      weeklyReports: false
+    };
+    writeProfileSettings(settings);
+    
+    res.status(201).json({
+      message: 'User created successfully',
+      user: {
+        id: newUser.id,
+        email: newUser.email,
+        name: newUser.name,
+        role: newUser.role,
+        package: packageType || 'basic'
+      }
+    });
+  } catch (error) {
+    console.error('Error creating user:', error);
+    res.status(500).json({ error: 'Failed to create user', message: error.message });
+  }
+});
+
+// Update user package (admin only)
+app.put('/api/admin/users/:userId/package', authenticateToken, authenticateAdmin, (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    const { package: packageType } = req.body;
+    
+    if (!['basic', 'pro', 'lifetime'].includes(packageType)) {
+      return res.status(400).json({ error: 'Invalid package type. Must be: basic, pro, or lifetime' });
+    }
+    
+    const user = users.find(u => u.id === userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Update package in profile settings
+    const settings = readProfileSettings();
+    if (!settings[userId]) {
+      settings[userId] = {};
+    }
+    
+    settings[userId].package = packageType;
+    settings[userId].lastSearchReset = new Date().toISOString();
+    settings[userId].updatedAt = new Date().toISOString();
+    
+    // Reset search count when changing package
+    if (packageType === 'pro') {
+      settings[userId].searchCount = 0;
+    } else if (packageType === 'basic') {
+      // Keep search count for basic (lifetime limit)
+    } else if (packageType === 'lifetime') {
+      // Unlimited for lifetime
+    }
+    
+    writeProfileSettings(settings);
+    
+    res.json({
+      success: true,
+      message: `User package updated to ${packageType}`,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        package: packageType
+      }
+    });
+  } catch (error) {
+    console.error('Error updating user package:', error);
+    res.status(500).json({
+      error: 'Failed to update user package',
+      message: error.message
+    });
+  }
+});
+
+// Get user package limits info
+app.get('/api/settings/package-info', authenticateToken, (req, res) => {
+  try {
+    const userId = req.user.id;
+    const limitCheck = checkPackageLimits(userId);
+    const settings = readProfileSettings();
+    const userSettings = settings[userId] || {};
+    
+    res.json({
+      package: userSettings.package || 'basic',
+      searchCount: userSettings.searchCount || 0,
+      remaining: limitCheck.remaining,
+      limit: limitCheck.limit,
+      period: userSettings.package === 'pro' ? 'monthly' : 'lifetime',
+      lastSearchReset: userSettings.lastSearchReset || null
+    });
+  } catch (error) {
+    console.error('Error getting package info:', error);
+    res.status(500).json({
+      error: 'Failed to get package info',
+      message: error.message
+    });
+  }
 });
 
 // Start server

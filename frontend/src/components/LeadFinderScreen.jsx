@@ -1,6 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Info, Plus, Search, Database, MessageSquare, X, Loader2, CheckCircle2, XCircle } from 'lucide-react';
-import { Pagination } from './Pagination';
 import { getApiUrl } from '../config';
 
 export function LeadFinderScreen({ user }) {
@@ -144,17 +143,7 @@ export function LeadFinderScreen({ user }) {
   const [error, setError] = useState(null);
   const [savedLeads, setSavedLeads] = useState([]);
   const [whatsappConnected, setWhatsappConnected] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(20);
-
-  // Pagination logic for search results
-  const paginatedSearchResults = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return searchResults.slice(startIndex, endIndex);
-  }, [searchResults, currentPage, itemsPerPage]);
-
-  const totalPages = Math.ceil(searchResults.length / itemsPerPage);
+  const [packageInfo, setPackageInfo] = useState(null);
 
   const handleSearch = async () => {
     if (!industry && !city) {
@@ -183,7 +172,30 @@ export function LeadFinderScreen({ user }) {
 
       if (!response.ok) {
         const errorData = await response.json();
+        // Reload package info if limit error
+        if (response.status === 403) {
+          const packageResponse = await fetch(getApiUrl('api/settings/package-info'), {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          if (packageResponse.ok) {
+            const packageData = await packageResponse.json();
+            setPackageInfo(packageData);
+          }
+        }
         throw new Error(errorData.error || 'Failed to search leads');
+      }
+      
+      // Reload package info after successful search
+      const packageResponse = await fetch(getApiUrl('api/settings/package-info'), {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (packageResponse.ok) {
+        const packageData = await packageResponse.json();
+        setPackageInfo(packageData);
       }
 
       const data = await response.json();
@@ -265,7 +277,6 @@ export function LeadFinderScreen({ user }) {
 
       setSearchResults(leadsWithSavedStatus);
       setHasSearched(true);
-      setCurrentPage(1); // Reset to first page when new search is performed
       
       // Refresh analytics after search
       try {
@@ -399,6 +410,37 @@ export function LeadFinderScreen({ user }) {
           </span>
         </p>
       </div>
+
+      {/* Package Info Banner */}
+      {packageInfo && (
+        <div className={`mb-6 rounded-lg p-4 border ${
+          packageInfo.package === 'basic' ? 'bg-blue-50 border-blue-200' :
+          packageInfo.package === 'pro' ? 'bg-green-50 border-green-200' :
+          'bg-purple-50 border-purple-200'
+        }`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-semibold text-[#2D3748]">
+                {packageInfo.package === 'basic' ? 'Basic Plan' :
+                 packageInfo.package === 'pro' ? 'Pro Plan' :
+                 'Lifetime Plan'}
+              </p>
+              <p className="text-sm text-[#718096] mt-1">
+                {packageInfo.remaining === Infinity ? (
+                  'Unlimited searches available'
+                ) : (
+                  `${packageInfo.remaining} of ${packageInfo.limit} searches remaining ${packageInfo.period === 'monthly' ? 'this month' : 'lifetime'}`
+                )}
+              </p>
+            </div>
+            {packageInfo.remaining === 0 && (
+              <span className="px-3 py-1 bg-red-100 text-red-600 rounded-full text-sm font-medium">
+                Limit Reached
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Analytics Section */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -569,7 +611,7 @@ export function LeadFinderScreen({ user }) {
                       </tr>
                     </thead>
                     <tbody>
-                      {paginatedSearchResults.map((lead, index) => (
+                      {searchResults.map((lead, index) => (
                         <tr key={lead.id} className={index % 2 === 0 ? 'bg-white' : 'bg-[#F5F7F9]/50'}>
                           <td className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-xs sm:text-sm font-medium text-[#2D3748] max-w-[120px] sm:max-w-none truncate sm:truncate-none">{lead.businessName}</td>
                           <td className="px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-4 text-xs sm:text-sm text-[#2D3748] hidden sm:table-cell whitespace-nowrap">
@@ -638,19 +680,6 @@ export function LeadFinderScreen({ user }) {
 
             {/* Modal Footer */}
             <div className="border-t border-gray-200">
-              {searchResults.length > 0 && (
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  totalItems={searchResults.length}
-                  itemsPerPage={itemsPerPage}
-                  onPageChange={setCurrentPage}
-                  onItemsPerPageChange={(value) => {
-                    setItemsPerPage(value);
-                    setCurrentPage(1);
-                  }}
-                />
-              )}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 sm:p-6">
                 <p className="text-xs sm:text-sm text-[#718096]">
                   Found {searchResults.length} {searchResults.length === 1 ? 'lead' : 'leads'}
