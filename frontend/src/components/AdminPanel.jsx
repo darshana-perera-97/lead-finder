@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, Search, Database, Package, Plus, Edit2, LogOut, TrendingUp, BarChart3 } from 'lucide-react';
+import { Users, Search, Database, Package, Plus, Edit2, LogOut, TrendingUp, BarChart3, Eye, EyeOff } from 'lucide-react';
 import { getApiUrl } from '../config';
 
 export function AdminPanel({ user, onLogout }) {
@@ -8,9 +8,12 @@ export function AdminPanel({ user, onLogout }) {
   const [loading, setLoading] = useState(true);
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    confirmPassword: '',
     name: '',
     package: 'basic'
   });
@@ -55,6 +58,19 @@ export function AdminPanel({ user, onLogout }) {
 
   const handleCreateUser = async (e) => {
     e.preventDefault();
+    
+    // Validate password match
+    if (formData.password !== formData.confirmPassword) {
+      alert('Passwords do not match!');
+      return;
+    }
+    
+    // Validate password length
+    if (formData.password.length < 6) {
+      alert('Password must be at least 6 characters long!');
+      return;
+    }
+    
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(getApiUrl('api/admin/users'), {
@@ -63,13 +79,20 @@ export function AdminPanel({ user, onLogout }) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          name: formData.name,
+          package: formData.package
+        })
       });
 
       if (response.ok) {
         alert('User created successfully!');
         setShowCreateUser(false);
-        setFormData({ email: '', password: '', name: '', package: 'basic' });
+        setShowPassword(false);
+        setShowConfirmPassword(false);
+        setFormData({ email: '', password: '', confirmPassword: '', name: '', package: 'basic' });
         loadData();
       } else {
         const error = await response.json();
@@ -304,13 +327,45 @@ export function AdminPanel({ user, onLogout }) {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-[#2D3748] mb-2">Password</label>
-                  <input
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#008080]"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      required
+                      minLength={6}
+                      placeholder="Enter password (min 6 characters)"
+                      className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#008080]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    >
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#2D3748] mb-2">Confirm Password</label>
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      value={formData.confirmPassword}
+                      onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                      required
+                      minLength={6}
+                      placeholder="Confirm password"
+                      className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#008080]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-[#2D3748] mb-2">Package</label>
@@ -335,7 +390,9 @@ export function AdminPanel({ user, onLogout }) {
                     type="button"
                     onClick={() => {
                       setShowCreateUser(false);
-                      setFormData({ email: '', password: '', name: '', package: 'basic' });
+                      setShowPassword(false);
+                      setShowConfirmPassword(false);
+                      setFormData({ email: '', password: '', confirmPassword: '', name: '', package: 'basic' });
                     }}
                     className="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors"
                   >

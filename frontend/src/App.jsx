@@ -324,6 +324,18 @@ function App() {
           } 
         />
         
+        {/* Redirect /admin to /admin/login or /admin/dashboard */}
+        <Route 
+          path="/admin" 
+          element={
+            isAuthenticated && user?.role === 'admin' ? (
+              <Navigate to="/admin/dashboard" replace />
+            ) : (
+              <Navigate to="/admin/login" replace />
+            )
+          } 
+        />
+        
         {/* Admin Login Route */}
         <Route 
           path="/admin/login" 
