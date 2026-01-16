@@ -1,8 +1,8 @@
 // Backend API Configuration
 // Set to empty string when frontend is served from backend (same origin)
 // Set to full URL when running frontend separately (development)
-// export const API_BASE_URL = 'https://leadflow.nexgenai.asia';
-export const API_BASE_URL = 'http://localhost:4001';
+export const API_BASE_URL = 'https://leadflow.nexgenai.asia';
+// export const API_BASE_URL = 'http://localhost:4001';
 
 // Helper function to build API URLs
 export const getApiUrl = (endpoint) => {
